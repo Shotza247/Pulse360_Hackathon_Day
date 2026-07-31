@@ -23,3 +23,8 @@ node_modules/
 __pycache__/
 *.pyc
 .venv/
+
+# ── Local env overrides (contain secrets) ──
+.env
+.env.local
+.env.*.local
