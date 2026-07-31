@@ -173,6 +173,53 @@ docker exec -i pulse360_db psql -U pulse360_user -d pulse360 < database/init/03_
 
 ---
 
+## Running the Full App (Next.js)
+
+### 1. Install dependencies
+
+```bash
+cd pulse360
+npm install
+```
+
+### 2. Set environment variables
+
+The `pulse360/.env` file is pre-configured for local development:
+```env
+DATABASE_URL="postgresql://pulse360_user:change_me_before_use@localhost:5432/pulse360"
+NEXTAUTH_SECRET="pulse360-dev-secret-change-in-production-32chars"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+### 3. Start the database first
+
+```bash
+docker compose up -d   # from the project root
+```
+
+### 4. Run the Next.js dev server
+
+```bash
+cd pulse360
+npm run dev
+```
+
+App available at **http://localhost:3000**
+
+### Default login credentials (from seed data)
+
+| Role | Email | Password |
+|---|---|---|
+| HR Admin | `lerato.mkhize@techcorp.co.za` | `Pulse360!Admin` |
+| Line Manager | `hlanganani.oosthuiz@techcorp.co.za` | `Pulse360!Manager` |
+| Employee | `mpho.zulu@techcorp.co.za` | `Pulse360!Employee` |
+
+> Passwords are bcrypt-hashed in the DB — never stored in plain text.
+
+---
+
+
+
 ## Project Structure (full app — in progress)
 
 ```

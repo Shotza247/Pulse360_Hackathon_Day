@@ -1,4 +1,5 @@
-import { auth } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -6,14 +7,15 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  const role = session.user.role;
+  const user = session.user as any;
+  const role = user.role as string;
 
-  if (role === "HR_ADMIN")     return <AdminDashboard userId={Number(session.user.id)} />;
-  if (role === "LINE_MANAGER") return <ManagerDashboard userId={Number(session.user.id)} />;
-  return <EmployeeDashboard userId={Number(session.user.id)} />;
+  if (role === "HR_ADMIN")     return <AdminDashboard userId={Number(user.id)} />;
+  if (role === "LINE_MANAGER") return <ManagerDashboard userId={Number(user.id)} />;
+  return <EmployeeDashboard userId={Number(user.id)} />;
 }
 
 // ─── HR Admin Dashboard ───────────────────────────────────────────────────────

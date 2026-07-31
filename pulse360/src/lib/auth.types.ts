@@ -1,12 +1,8 @@
-// Extend NextAuth types to include role and department
+// next-auth type extensions for Pulse360
 import "next-auth";
 import "next-auth/jwt";
 
 declare module "next-auth" {
-  interface User {
-    role:       string;
-    department: string;
-  }
   interface Session {
     user: {
       id:         string;
@@ -14,7 +10,12 @@ declare module "next-auth" {
       name:       string;
       role:       string;
       department: string;
+      image?:     string | null;
     };
+  }
+  interface User {
+    role:       string;
+    department: string;
   }
 }
 

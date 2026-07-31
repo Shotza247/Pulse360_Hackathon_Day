@@ -1,4 +1,5 @@
-import { auth } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -10,8 +11,9 @@ export default async function EmployeesPage({
 }: {
   searchParams: Promise<{ q?: string; dept?: string; role?: string; page?: string }>;
 }) {
-  const session = await auth();
-  if (!session || session.user.role !== "HR_ADMIN") redirect("/dashboard");
+  const session = await getServerSession(authOptions);
+  const userSession = session?.user as any;
+  if (!session || userSession?.role !== "HR_ADMIN") redirect("/dashboard");
 
   const params     = await searchParams;
   const q          = params.q    ?? "";
