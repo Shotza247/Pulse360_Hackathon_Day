@@ -1,0 +1,245 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── Enums ────────────────────────────────────────────────────────────────────
+
+enum EmployeeRole {
+  HR_ADMIN
+  LINE_MANAGER
+  EMPLOYEE
+}
+
+enum CyclePhase {
+  DRAFT
+  NOMINATE
+  APPROVE
+  REVIEW
+  CALCULATION
+  CONSULTATION
+  ACCEPT
+  CLOSED
+}
+
+enum NominationDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum NominationApproval {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NominationSubmission {
+  DRAFT
+  SUBMITTED
+}
+
+enum ReviewStatus {
+  DRAFT
+  SUBMITTED
+}
+
+enum QuestionAnswerType {
+  RATING
+  TEXT
+  BOOLEAN
+}
+
+// ── Models ───────────────────────────────────────────────────────────────────
+
+model Department {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique @db.VarChar(100)
+  description String?
+  employees   Employee[]
+
+  @@map("department")
+}
+
+model Employee {
+  id            Int          @id @default(autoincrement())
+  employeeKey   String?      @unique @db.VarChar(20)  @map("employee_key")
+  firstName     String       @db.VarChar(100)          @map("first_name")
+  lastName      String       @db.VarChar(100)          @map("last_name")
+  email         String       @unique                   // citext in DB
+  jobTitle      String?      @db.VarChar(200)          @map("job_title")
+  jobGrade      String?      @db.VarChar(60)           @map("job_grade")
+  passwordHash  String?      @map("password_hash")     // bcrypt hash
+  departmentId  Int          @map("department_id")
+  managerId     Int?         @map("manager_id")
+  role          EmployeeRole @default(EMPLOYEE)
+  isActive      Boolean      @default(true)            @map("is_active")
+  createdAt     DateTime     @default(now())           @map("created_at")
+  updatedAt     DateTime     @updatedAt                @map("updated_at")
+
+  department        Department   @relation(fields: [departmentId], references: [id])
+  manager           Employee?    @relation("ManagerReports", fields: [managerId], references: [id])
+  directReports     Employee[]   @relation("ManagerReports")
+
+  cyclesCreated     ReviewCycle[]     @relation("CycleCreatedBy")
+  nominationsAs     Nomination[]      @relation("NominationEmployee")
+  nominationsBy     Nomination[]      @relation("NominationReviewer")
+  reviewsGiven      Review[]          @relation("ReviewReviewer")
+  reviewsReceived   Review[]          @relation("ReviewEmployee")
+  results           ReviewResult[]
+  auditActions      AuditLog[]
+
+  @@map("employee")
+}
+
+model ReviewCycle {
+  id           Int        @id @default(autoincrement())
+  name         String     @db.VarChar(100)
+  startDate    DateTime   @map("start_date")           @db.Date
+  endDate      DateTime   @map("end_date")             @db.Date
+  phase        CyclePhase @default(DRAFT)
+  minNominees  Int        @default(3)                  @map("min_nominees")
+  maxNominees  Int        @default(8)                  @map("max_nominees")
+  createdById  Int        @map("created_by")
+  createdAt    DateTime   @default(now())              @map("created_at")
+
+  createdBy    Employee        @relation("CycleCreatedBy", fields: [createdById], references: [id])
+  criteria     CycleCriteria[]
+  nominations  Nomination[]
+  reviews      Review[]
+  results      ReviewResult[]
+
+  @@map("review_cycle")
+}
+
+model PulseCriterion {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(100)
+  description String?
+  isActive    Boolean  @default(true)  @map("is_active")
+  sortOrder   Int      @unique         @map("sort_order")
+
+  questions    PulseQuestion[]
+  cycles       CycleCriteria[]
+  ratings      ReviewRating[]
+  results      ReviewResult[]
+
+  @@map("pulse_criterion")
+}
+
+model PulseQuestion {
+  id           Int                @id @default(autoincrement())
+  criterionId  Int                @map("criterion_id")
+  questionText String             @map("question_text")
+  answerType   QuestionAnswerType @default(RATING)      @map("answer_type")
+  sortOrder    Int                @map("sort_order")
+  isActive     Boolean            @default(true)        @map("is_active")
+
+  criterion    PulseCriterion @relation(fields: [criterionId], references: [id])
+  ratings      ReviewRating[]
+
+  @@unique([criterionId, sortOrder])
+  @@map("pulse_question")
+}
+
+model CycleCriteria {
+  cycleId      Int @map("cycle_id")
+  criterionId  Int @map("criterion_id")
+
+  cycle        ReviewCycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  criterion    PulseCriterion @relation(fields: [criterionId], references: [id])
+
+  @@id([cycleId, criterionId])
+  @@map("cycle_criteria")
+}
+
+model Nomination {
+  id               Int                  @id @default(autoincrement())
+  cycleId          Int                  @map("cycle_id")
+  employeeId       Int                  @map("employee_id")
+  reviewerId       Int                  @map("reviewer_id")
+  direction        NominationDirection
+  approvalStatus   NominationApproval   @default(PENDING)   @map("approval_status")
+  submissionStatus NominationSubmission @default(DRAFT)     @map("submission_status")
+  isMandatory      Boolean              @default(false)     @map("is_mandatory")
+  overrideNote     String?              @map("override_note")
+  createdAt        DateTime             @default(now())     @map("created_at")
+
+  cycle      ReviewCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  employee   Employee    @relation("NominationEmployee", fields: [employeeId], references: [id])
+  reviewer   Employee    @relation("NominationReviewer", fields: [reviewerId], references: [id])
+
+  @@unique([cycleId, employeeId, reviewerId])
+  @@map("nomination")
+}
+
+model Review {
+  id                 Int          @id @default(autoincrement())
+  cycleId            Int          @map("cycle_id")
+  reviewerId         Int          @map("reviewer_id")
+  employeeId         Int          @map("employee_id")
+  doWellComment      String?      @map("do_well_comment")
+  improveComment     String?      @map("improve_comment")
+  attentionComment   String?      @map("attention_comment")
+  wouldPickForTeam   Boolean?     @map("would_pick_for_team")
+  status             ReviewStatus @default(DRAFT)
+  submittedAt        DateTime?    @map("submitted_at")
+
+  cycle      ReviewCycle  @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  reviewer   Employee     @relation("ReviewReviewer", fields: [reviewerId], references: [id])
+  employee   Employee     @relation("ReviewEmployee", fields: [employeeId], references: [id])
+  ratings    ReviewRating[]
+
+  @@unique([cycleId, reviewerId, employeeId])
+  @@map("review")
+}
+
+model ReviewRating {
+  id          Int     @id @default(autoincrement())
+  reviewId    Int     @map("review_id")
+  criterionId Int     @map("criterion_id")
+  questionId  Int     @map("question_id")
+  score       Int?
+  textAnswer  String? @map("text_answer")
+
+  review    Review         @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  criterion PulseCriterion @relation(fields: [criterionId], references: [id])
+  question  PulseQuestion  @relation(fields: [questionId], references: [id])
+
+  @@unique([reviewId, questionId])
+  @@map("review_rating")
+}
+
+model ReviewResult {
+  id           Int      @id @default(autoincrement())
+  cycleId      Int      @map("cycle_id")
+  employeeId   Int      @map("employee_id")
+  criterionId  Int?     @map("criterion_id")
+  avgScore     Decimal  @map("avg_score")      @db.Decimal(4, 2)
+  overallAvg   Decimal? @map("overall_avg")    @db.Decimal(4, 2)
+  reviewCount  Int      @map("review_count")
+  calculatedAt DateTime @default(now())        @map("calculated_at")
+
+  cycle     ReviewCycle     @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  employee  Employee        @relation(fields: [employeeId], references: [id])
+  criterion PulseCriterion? @relation(fields: [criterionId], references: [id])
+
+  @@unique([cycleId, employeeId, criterionId])
+  @@map("review_result")
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  actorId    Int?     @map("actor_id")
+  action     String   @db.VarChar(80)
+  entityType String   @db.VarChar(50)    @map("entity_type")
+  entityId   Int?     @map("entity_id")
+  metadata   Json?
+  createdAt  DateTime @default(now())    @map("created_at")
+
+  actor Employee? @relation(fields: [actorId], references: [id])
+
+  @@map("audit_log")
+}
