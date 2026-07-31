@@ -1,0 +1,529 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>eWay 360° — Database Design Analysis</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 32px 16px 48px;
+  }
+  .page { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 16px; font-weight: 700; margin: 32px 0 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+  h3 { font-size: 14px; font-weight: 600; margin: 20px 0 8px; color: #1f2328; }
+  .meta { color: #57606a; font-size: 13px; margin-bottom: 28px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .badge-mvp1  { background: #dbeafe; color: #1e40af; }
+  .badge-mvp2  { background: #ede9fe; color: #5b21b6; }
+  .badge-calc  { background: #d1fae5; color: #065f46; }
+  .badge-gap   { background: #fee2e2; color: #991b1b; }
+  .badge-note  { background: #fef9c3; color: #713f12; }
+
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
+  th { background: #f7f8fa; text-align: left; padding: 7px 10px; border: 1px solid #e5e7eb; font-weight: 600; color: #57606a; }
+  td { padding: 6px 10px; border: 1px solid #e5e7eb; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafbfc; }
+  code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; background: #f7f8fa; padding: 1px 4px; border-radius: 3px; border: 1px solid #e5e7eb; }
+  .pk { color: #3b82d4; font-weight: 700; }
+  .fk { color: #7c5cd8; }
+  .section-note { background: #f7f8fa; border-left: 3px solid #3b82d4; padding: 10px 14px; margin: 12px 0 20px; font-size: 13px; color: #57606a; border-radius: 0 4px 4px 0; }
+  .gap-box { background: #fff8f0; border-left: 3px solid #f97316; padding: 10px 14px; margin: 8px 0; border-radius: 0 4px 4px 0; font-size: 13px; }
+  .gap-title { font-weight: 600; margin-bottom: 4px; }
+  .erd-wrap { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 20px 16px; margin: 12px 0 20px; overflow-x: auto; }
+  svg text { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; }
+  .legend-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 8px 0 20px; font-size: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 4px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 540px) { .two-col { grid-template-columns: 1fr; } }
+  .card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px 14px; background: #fafbfc; }
+  .card-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #8b949e; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>eWay 360° Performance Review</h1>
+  <div class="meta">Database Design Analysis  ·  IBM Bob Team  ·  Hackathon V2  ·  Stack: Next.js + PostgreSQL</div>
+
+  
+  <h2>1. What the Team Specified — Canonical Data Model</h2>
+  <div class="section-note">
+    Sourced from <strong>§7 of Use Case Specification.md</strong>. This is the official baseline entity list the team agreed on. Eight entities were named with fields and relationships.
+  </div>
+
+  <h3>Entity Summary</h3>
+  <table>
+    <thead><tr><th>Entity</th><th>MVP</th><th>Key Fields (as specified)</th><th>Relationship Summary</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Employee</strong></td><td><span class="badge badge-mvp1">MVP 1</span></td><td><code>id</code>, <code>name</code>, <code>email</code>, <code>department</code>, <code>role</code>, <code>managerId</code>, <code>isActive</code></td><td>Self-ref manager; belongs to Department</td></tr>
+      <tr><td><strong>Department</strong></td><td><span class="badge badge-mvp1">MVP 1</span></td><td><code>id</code>, <code>name</code>, <code>description</code></td><td>Has many Employees</td></tr>
+      <tr><td><strong>ReviewCycle</strong></td><td><span class="badge badge-mvp1">MVP 1</span></td><td><code>id</code>, <code>name</code>, <code>startDate</code>, <code>endDate</code>, <code>phase</code> (enum), <code>createdBy</code></td><td>Has many Nominations; links to selected EwayCriteria</td></tr>
+      <tr><td><strong>EwayCriterion</strong></td><td><span class="badge badge-mvp1">MVP 1</span> <span class="badge badge-mvp2">MVP 2</span></td><td><code>id</code>, <code>name</code>, <code>description</code>, <code>isActive</code>, <code>sortOrder</code></td><td>Used in ReviewCycles; rated in ReviewRatings</td></tr>
+      <tr><td><strong>Nomination</strong></td><td><span class="badge badge-mvp1">MVP 1</span></td><td><code>id</code>, <code>cycleId</code>, <code>employeeId</code>, <code>reviewerId</code>, <code>direction</code> (inbound/outbound), <code>status</code> (pending/approved/rejected)</td><td>Belongs to ReviewCycle + two Employee FK refs</td></tr>
+      <tr><td><strong>Review</strong></td><td><span class="badge badge-mvp1">MVP 1</span></td><td><code>id</code>, <code>cycleId</code>, <code>reviewerId</code>, <code>employeeId</code>, <code>doWellComment</code>, <code>improveComment</code>, <code>status</code> (draft/submitted), <code>submittedAt</code></td><td>Belongs to ReviewCycle; has many ReviewRatings</td></tr>
+      <tr><td><strong>ReviewRating</strong></td><td><span class="badge badge-mvp1">MVP 1</span></td><td><code>id</code>, <code>reviewId</code>, <code>criterionId</code>, <code>score</code> (1–5)</td><td>Belongs to Review and EwayCriterion</td></tr>
+      <tr><td><strong>ReviewResult</strong></td><td><span class="badge badge-calc">Computed</span></td><td><code>id</code>, <code>cycleId</code>, <code>employeeId</code>, <code>criterionId</code>, <code>avgScore</code>, <code>reviewCount</code></td><td>Calculated aggregate per employee per criterion</td></tr>
+    </tbody>
+  </table>
+
+  
+  <h2>2. Entity Relationship Diagram (ERD)</h2>
+  <div class="erd-wrap">
+    <svg width="100%" xmlns="http://www.w3.org/2000/svg">
+      
+      <rect x="10" y="10" width="140" height="70" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"></rect>
+      <rect x="10" y="10" width="140" height="22" rx="4" fill="#3b82d4"></rect>
+      <text x="80" y="25" text-anchor="middle" fill="white" font-size="11" font-weight="700">Department</text>
+      <text x="20" y="46" font-size="10" fill="#1f2328">🔑 id (PK)</text>
+      <text x="20" y="59" font-size="10" fill="#1f2328">   name, description</text>
+
+      
+      <rect x="200" y="10" width="180" height="100" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"></rect>
+      <rect x="200" y="10" width="180" height="22" rx="4" fill="#3b82d4"></rect>
+      <text x="290" y="25" text-anchor="middle" fill="white" font-size="11" font-weight="700">Employee</text>
+      <text x="210" y="46" font-size="10" fill="#1f2328">🔑 id (PK)</text>
+      <text x="210" y="59" font-size="10" fill="#1f2328">   name, email, jobTitle, jobGrade</text>
+      <text x="210" y="72" font-size="10" fill="#7c5cd8">🔗 departmentId (FK)</text>
+      <text x="210" y="85" font-size="10" fill="#7c5cd8">🔗 managerId (FK → self)</text>
+      <text x="210" y="98" font-size="10" fill="#1f2328">   role (enum), isActive</text>
+
+      
+      <rect x="440" y="10" width="180" height="100" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"></rect>
+      <rect x="440" y="10" width="180" height="22" rx="4" fill="#3b82d4"></rect>
+      <text x="530" y="25" text-anchor="middle" fill="white" font-size="11" font-weight="700">ReviewCycle</text>
+      <text x="450" y="46" font-size="10" fill="#1f2328">🔑 id (PK)</text>
+      <text x="450" y="59" font-size="10" fill="#1f2328">   name, startDate, endDate</text>
+      <text x="450" y="72" font-size="10" fill="#1f2328">   phase (enum), minNominees</text>
+      <text x="450" y="85" font-size="10" fill="#1f2328">   maxNominees</text>
+      <text x="450" y="98" font-size="10" fill="#7c5cd8">🔗 createdBy (FK → Employee)</text>
+
+      
+      <rect x="440" y="145" width="180" height="90" rx="4" fill="#ede9fe" stroke="#c4b5fd" stroke-width="1.5"></rect>
+      <rect x="440" y="145" width="180" height="22" rx="4" fill="#7c5cd8"></rect>
+      <text x="530" y="160" text-anchor="middle" fill="white" font-size="11" font-weight="700">EwayCriterion</text>
+      <text x="450" y="181" font-size="10" fill="#1f2328">🔑 id (PK)</text>
+      <text x="450" y="194" font-size="10" fill="#1f2328">   name, description</text>
+      <text x="450" y="207" font-size="10" fill="#1f2328">   isActive, sortOrder</text>
+      <text x="450" y="220" font-size="10" fill="#7c5cd8">🔗 (via CycleCriteria join)</text>
+
+      
+      <rect x="440" y="270" width="180" height="80" rx="4" fill="#fef9c3" stroke="#fcd34d" stroke-width="1.5"></rect>
+      <rect x="440" y="270" width="180" height="22" rx="4" fill="#d97706"></rect>
+      <text x="530" y="285" text-anchor="middle" fill="white" font-size="11" font-weight="700">EwayQuestion ⚡</text>
+      <text x="450" y="306" font-size="10" fill="#1f2328">🔑 id (PK)</text>
+      <text x="450" y="319" font-size="10" fill="#7c5cd8">🔗 criterionId (FK)</text>
+      <text x="450" y="332" font-size="10" fill="#1f2328">   questionText, sortOrder</text>
+      <text x="450" y="345" font-size="10" fill="#1f2328">   answerType (rating|text|bool)</text>
+
+      
+      <rect x="200" y="145" width="200" height="100" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"></rect>
+      <rect x="200" y="145" width="200" height="22" rx="4" fill="#3b82d4"></rect>
+      <text x="300" y="160" text-anchor="middle" fill="white" font-size="11" font-weight="700">Nomination</text>
+      <text x="210" y="181" font-size="10" fill="#1f2328">🔑 id (PK)</text>
+      <text x="210" y="194" font-size="10" fill="#7c5cd8">🔗 cycleId, employeeId, reviewerId</text>
+      <text x="210" y="207" font-size="10" fill="#1f2328">   direction (inbound/outbound)</text>
+      <text x="210" y="220" font-size="10" fill="#1f2328">   status (pending/approved/rejected)</text>
+      <text x="210" y="233" font-size="10" fill="#1f2328">   isMandatory (manager lock)</text>
+
+      
+      <rect x="10" y="270" width="200" height="110" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"></rect>
+      <rect x="10" y="270" width="200" height="22" rx="4" fill="#3b82d4"></rect>
+      <text x="110" y="285" text-anchor="middle" fill="white" font-size="11" font-weight="700">Review</text>
+      <text x="20" y="306" font-size="10" fill="#1f2328">🔑 id (PK)</text>
+      <text x="20" y="319" font-size="10" fill="#7c5cd8">🔗 cycleId, reviewerId, employeeId</text>
+      <text x="20" y="332" font-size="10" fill="#1f2328">   doWellComment, improveComment</text>
+      <text x="20" y="345" font-size="10" fill="#1f2328">   attentionComment</text>
+      <text x="20" y="358" font-size="10" fill="#1f2328">   wouldPickForTeam (bool)</text>
+      <text x="20" y="371" font-size="10" fill="#1f2328">   status, submittedAt</text>
+
+      
+      <rect x="10" y="420" width="200" height="90" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"></rect>
+      <rect x="10" y="420" width="200" height="22" rx="4" fill="#3b82d4"></rect>
+      <text x="110" y="435" text-anchor="middle" fill="white" font-size="11" font-weight="700">ReviewRating</text>
+      <text x="20" y="456" font-size="10" fill="#1f2328">🔑 id (PK)</text>
+      <text x="20" y="469" font-size="10" fill="#7c5cd8">🔗 reviewId, criterionId, questionId</text>
+      <text x="20" y="482" font-size="10" fill="#1f2328">   score (1–5) or textAnswer</text>
+      <text x="20" y="495" font-size="10" fill="#1f2328">   answerType</text>
+
+      
+      <rect x="240" y="420" width="200" height="90" rx="4" fill="#d1fae5" stroke="#6ee7b7" stroke-width="1.5"></rect>
+      <rect x="240" y="420" width="200" height="22" rx="4" fill="#059669"></rect>
+      <text x="340" y="435" text-anchor="middle" fill="white" font-size="11" font-weight="700">ReviewResult (computed)</text>
+      <text x="250" y="456" font-size="10" fill="#1f2328">🔑 id (PK)</text>
+      <text x="250" y="469" font-size="10" fill="#7c5cd8">🔗 cycleId, employeeId, criterionId</text>
+      <text x="250" y="482" font-size="10" fill="#1f2328">   avgScore, reviewCount</text>
+      <text x="250" y="495" font-size="10" fill="#1f2328">   overallAvg, calculatedAt</text>
+
+      
+      <rect x="480" y="420" width="160" height="75" rx="4" fill="#ede9fe" stroke="#c4b5fd" stroke-width="1.5"></rect>
+      <rect x="480" y="420" width="160" height="22" rx="4" fill="#7c5cd8"></rect>
+      <text x="560" y="435" text-anchor="middle" fill="white" font-size="11" font-weight="700">CycleCriteria ⚡</text>
+      <text x="490" y="456" font-size="10" fill="#7c5cd8">🔗 cycleId (FK)</text>
+      <text x="490" y="469" font-size="10" fill="#7c5cd8">🔗 criterionId (FK)</text>
+      <text x="490" y="482" font-size="10" fill="#1f2328">   (PK composite)</text>
+
+      
+      <rect x="480" y="520" width="160" height="35" rx="4" fill="#fef9c3" stroke="#fcd34d" stroke-width="1.5"></rect>
+      <text x="560" y="537" text-anchor="middle" font-size="10" fill="#713f12" font-weight="700">AuditLog ⚡ (MVP2)</text>
+      <text x="560" y="550" text-anchor="middle" font-size="9" fill="#57606a">actorId, action, entityType, ts</text>
+
+      
+      <path d="M290 110 Q290 130 330 130 Q370 130 370 80 Q370 10 390 10" stroke="#7c5cd8" stroke-width="1.2" fill="none"></path>
+      <text x="335" y="128" font-size="9" fill="#7c5cd8">managerId</text>
+
+      
+      <line x1="200" y1="50" x2="150" y2="50" stroke="#3b82d4" stroke-width="1.2"></line>
+      <polygon points="153,46 143,50 153,54" fill="#3b82d4"></polygon>
+
+      
+      <line x1="440" y1="98" x2="400" y2="98" stroke="#7c5cd8" stroke-width="1.2"></line>
+      <polygon points="403,94 393,98 403,102" fill="#7c5cd8"></polygon>
+
+      
+      <line x1="400" y1="185" x2="440" y2="60" stroke="#3b82d4" stroke-width="1.2"></line>
+      <polygon points="441,63 444,50 437,58" fill="#3b82d4"></polygon>
+
+      
+      <line x1="290" y1="145" x2="290" y2="110" stroke="#3b82d4" stroke-width="1.2"></line>
+      <polygon points="286,113 290,103 294,113" fill="#3b82d4"></polygon>
+
+      
+      <line x1="200" y1="310" x2="210" y2="245" stroke="#3b82d4" stroke-width="1.2"></line>
+      <polygon points="206,248 210,238 214,248" fill="#3b82d4"></polygon>
+
+      
+      <line x1="110" y1="420" x2="110" y2="380" stroke="#3b82d4" stroke-width="1.2"></line>
+      <polygon points="106,383 110,373 114,383" fill="#3b82d4"></polygon>
+
+      
+      <path d="M210 460 Q340 460 440 310" stroke="#d97706" stroke-width="1.2" fill="none"></path>
+      <polygon points="441,313 444,300 437,308" fill="#d97706"></polygon>
+
+      
+      <path d="M340 420 Q340 380 440 380 Q520 380 530 110" stroke="#059669" stroke-width="1.2" fill="none"></path>
+      <polygon points="527,113 530,100 533,113" fill="#059669"></polygon>
+
+      
+      <line x1="560" y1="420" x2="560" y2="110" stroke="#7c5cd8" stroke-width="1.2"></line>
+      <polygon points="556,113 560,100 564,113" fill="#7c5cd8"></polygon>
+
+      
+      <line x1="560" y1="420" x2="560" y2="235" stroke="#7c5cd8" stroke-width="1.2"></line>
+      <polygon points="556,238 560,225 564,238" fill="#7c5cd8"></polygon>
+
+      
+      <line x1="530" y1="270" x2="530" y2="235" stroke="#d97706" stroke-width="1.2"></line>
+      <polygon points="526,238 530,225 534,238" fill="#d97706"></polygon>
+    </svg>
+  </div>
+
+  <div class="legend-row">
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82d4"></div> Core MVP 1 entities</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#7c5cd8"></div> FK / junction tables</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#059669"></div> Computed/aggregated</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div> Gap entities (⚡ = not yet in spec)</div>
+  </div>
+
+  
+  <h2>3. Recommended Full Schema (PostgreSQL)</h2>
+
+  <h3>3.1 Department</h3>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td><code>SERIAL</code></td><td>PK</td><td>Auto-increment</td></tr>
+      <tr><td>name</td><td><code>VARCHAR(100)</code></td><td>NOT NULL, UNIQUE</td><td>e.g. "Delivery &amp; Technology"</td></tr>
+      <tr><td>description</td><td><code>TEXT</code></td><td>NULLABLE</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 Employee</h3>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td><code>SERIAL</code></td><td>PK</td><td></td></tr>
+      <tr><td>employeeKey</td><td><code>VARCHAR(20)</code></td><td>UNIQUE, NULLABLE</td><td>HR system key (from XLSX)</td></tr>
+      <tr><td>firstName</td><td><code>VARCHAR(100)</code></td><td>NOT NULL</td><td></td></tr>
+      <tr><td>lastName</td><td><code>VARCHAR(100)</code></td><td>NOT NULL</td><td></td></tr>
+      <tr><td>email</td><td><code>VARCHAR(255)</code></td><td>NOT NULL, UNIQUE</td><td>Used as login identifier</td></tr>
+      <tr><td>jobTitle</td><td><code>VARCHAR(200)</code></td><td>NULLABLE</td><td></td></tr>
+      <tr><td>jobGrade</td><td><code>VARCHAR(50)</code></td><td>NULLABLE</td><td>e.g. "PRN - Principal Consu"</td></tr>
+      <tr><td class="fk">departmentId</td><td><code>INTEGER</code></td><td>FK → Department.id</td><td>NOT NULL</td></tr>
+      <tr><td class="fk">managerId</td><td><code>INTEGER</code></td><td>FK → Employee.id (self-ref)</td><td>NULLABLE (CEO has no manager)</td></tr>
+      <tr><td>role</td><td><code>ENUM</code></td><td>NOT NULL, DEFAULT 'EMPLOYEE'</td><td>'HR_ADMIN' | 'LINE_MANAGER' | 'EMPLOYEE'</td></tr>
+      <tr><td>isActive</td><td><code>BOOLEAN</code></td><td>DEFAULT TRUE</td><td>Soft delete flag</td></tr>
+      <tr><td>createdAt</td><td><code>TIMESTAMPTZ</code></td><td>DEFAULT NOW()</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 ReviewCycle</h3>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td><code>SERIAL</code></td><td>PK</td><td></td></tr>
+      <tr><td>name</td><td><code>VARCHAR(100)</code></td><td>NOT NULL</td><td>e.g. "H1 2026"</td></tr>
+      <tr><td>startDate</td><td><code>DATE</code></td><td>NOT NULL</td><td></td></tr>
+      <tr><td>endDate</td><td><code>DATE</code></td><td>NOT NULL</td><td></td></tr>
+      <tr><td>phase</td><td><code>ENUM</code></td><td>NOT NULL, DEFAULT 'DRAFT'</td><td>'DRAFT'|'NOMINATE'|'APPROVE'|'REVIEW'|'CALCULATION'|'CONSULTATION'|'ACCEPT'|'CLOSED'</td></tr>
+      <tr><td>minNominees</td><td><code>INTEGER</code></td><td>DEFAULT 3</td><td>Configurable per cycle</td></tr>
+      <tr><td>maxNominees</td><td><code>INTEGER</code></td><td>DEFAULT 8</td><td>Configurable per cycle</td></tr>
+      <tr><td class="fk">createdBy</td><td><code>INTEGER</code></td><td>FK → Employee.id</td><td>HR Admin who created it</td></tr>
+      <tr><td>createdAt</td><td><code>TIMESTAMPTZ</code></td><td>DEFAULT NOW()</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.4 EwayCriterion</h3>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td><code>SERIAL</code></td><td>PK</td><td></td></tr>
+      <tr><td>name</td><td><code>VARCHAR(100)</code></td><td>NOT NULL, UNIQUE</td><td>e.g. "MASTERFUL"</td></tr>
+      <tr><td>description</td><td><code>TEXT</code></td><td>NULLABLE</td><td></td></tr>
+      <tr><td>isActive</td><td><code>BOOLEAN</code></td><td>DEFAULT TRUE</td><td></td></tr>
+      <tr><td>sortOrder</td><td><code>INTEGER</code></td><td>NOT NULL</td><td>1–5 for display order</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.5 EwayQuestion <span class="badge badge-gap">⚡ Gap — must add</span></h3>
+  <div class="gap-box">
+    <div class="gap-title">Why this table is required</div>
+    The spec defines 25 sub-questions across 5 criteria (5 each) + 3 additional questions. The team's proposed model only has <code>ReviewRating(score 1–5)</code> with no way to store per-question answers or handle the mixed types (rating, text, boolean) of the Additional Questions section.
+  </div>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td><code>SERIAL</code></td><td>PK</td><td></td></tr>
+      <tr><td class="fk">criterionId</td><td><code>INTEGER</code></td><td>FK → EwayCriterion.id</td><td></td></tr>
+      <tr><td>questionText</td><td><code>TEXT</code></td><td>NOT NULL</td><td>Full question wording</td></tr>
+      <tr><td>answerType</td><td><code>ENUM</code></td><td>NOT NULL</td><td>'RATING' | 'TEXT' | 'BOOLEAN'</td></tr>
+      <tr><td>sortOrder</td><td><code>INTEGER</code></td><td>NOT NULL</td><td>1–5 within a criterion</td></tr>
+      <tr><td>isActive</td><td><code>BOOLEAN</code></td><td>DEFAULT TRUE</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.6 CycleCriteria (Junction) <span class="badge badge-gap">⚡ Gap — must add</span></h3>
+  <div class="gap-box">
+    <div class="gap-title">Why this table is required</div>
+    The spec says "Admin selects active eWay criteria when creating a cycle". The original model has no many-to-many join table for this relationship. Without it there is no way to know which criteria were active for a specific historical cycle.
+  </div>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="fk">cycleId</td><td><code>INTEGER</code></td><td>FK → ReviewCycle.id</td><td>Composite PK</td></tr>
+      <tr><td class="fk">criterionId</td><td><code>INTEGER</code></td><td>FK → EwayCriterion.id</td><td>Composite PK</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.7 Nomination</h3>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td><code>SERIAL</code></td><td>PK</td><td></td></tr>
+      <tr><td class="fk">cycleId</td><td><code>INTEGER</code></td><td>FK → ReviewCycle.id, NOT NULL</td><td></td></tr>
+      <tr><td class="fk">employeeId</td><td><code>INTEGER</code></td><td>FK → Employee.id, NOT NULL</td><td>Person being reviewed</td></tr>
+      <tr><td class="fk">reviewerId</td><td><code>INTEGER</code></td><td>FK → Employee.id, NOT NULL</td><td>Person doing the reviewing</td></tr>
+      <tr><td>direction</td><td><code>ENUM</code></td><td>NOT NULL</td><td>'INBOUND' | 'OUTBOUND'</td></tr>
+      <tr><td>status</td><td><code>ENUM</code></td><td>DEFAULT 'PENDING'</td><td>'PENDING' | 'APPROVED' | 'REJECTED'</td></tr>
+      <tr><td>isMandatory</td><td><code>BOOLEAN</code></td><td>DEFAULT FALSE</td><td>TRUE for manager — cannot be removed</td></tr>
+      <tr><td>nominationStatus</td><td><code>ENUM</code></td><td>DEFAULT 'DRAFT'</td><td>'DRAFT' | 'SUBMITTED' (employee's overall nomination set)</td></tr>
+      <tr><td>overrideNote</td><td><code>TEXT</code></td><td>NULLABLE</td><td>HR Admin override reason</td></tr>
+      <tr><td>createdAt</td><td><code>TIMESTAMPTZ</code></td><td>DEFAULT NOW()</td><td></td></tr>
+      <tr><td colspan="4"><em>UNIQUE constraint on (cycleId, employeeId, reviewerId)</em></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.8 Review</h3>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td><code>SERIAL</code></td><td>PK</td><td></td></tr>
+      <tr><td class="fk">cycleId</td><td><code>INTEGER</code></td><td>FK → ReviewCycle.id, NOT NULL</td><td></td></tr>
+      <tr><td class="fk">reviewerId</td><td><code>INTEGER</code></td><td>FK → Employee.id, NOT NULL</td><td></td></tr>
+      <tr><td class="fk">employeeId</td><td><code>INTEGER</code></td><td>FK → Employee.id, NOT NULL</td><td>Subject being reviewed</td></tr>
+      <tr><td>doWellComment</td><td><code>TEXT</code></td><td>NULLABLE (draft), min 20 chars on submit</td><td></td></tr>
+      <tr><td>improveComment</td><td><code>TEXT</code></td><td>NULLABLE (draft), min 20 chars on submit</td><td></td></tr>
+      <tr><td>attentionComment</td><td><code>TEXT</code></td><td>NULLABLE</td><td>Additional Q1: "What should they pay attention to?"</td></tr>
+      <tr><td>wouldPickForTeam</td><td><code>BOOLEAN</code></td><td>NULLABLE</td><td>Additional Q3: Yes/No</td></tr>
+      <tr><td>status</td><td><code>ENUM</code></td><td>DEFAULT 'DRAFT'</td><td>'DRAFT' | 'SUBMITTED'</td></tr>
+      <tr><td>submittedAt</td><td><code>TIMESTAMPTZ</code></td><td>NULLABLE</td><td>Set on submission</td></tr>
+      <tr><td colspan="4"><em>UNIQUE constraint on (cycleId, reviewerId, employeeId)</em></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.9 ReviewRating</h3>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td><code>SERIAL</code></td><td>PK</td><td></td></tr>
+      <tr><td class="fk">reviewId</td><td><code>INTEGER</code></td><td>FK → Review.id, NOT NULL</td><td></td></tr>
+      <tr><td class="fk">criterionId</td><td><code>INTEGER</code></td><td>FK → EwayCriterion.id, NOT NULL</td><td></td></tr>
+      <tr><td class="fk">questionId</td><td><code>INTEGER</code></td><td>FK → EwayQuestion.id, NOT NULL</td><td>⚡ Required for per-question granularity</td></tr>
+      <tr><td>score</td><td><code>SMALLINT</code></td><td>CHECK (score BETWEEN 1 AND 5), NULLABLE</td><td>For RATING type questions</td></tr>
+      <tr><td>textAnswer</td><td><code>TEXT</code></td><td>NULLABLE</td><td>For TEXT type questions (Additional Q2)</td></tr>
+      <tr><td colspan="4"><em>UNIQUE constraint on (reviewId, questionId)</em></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.10 ReviewResult (Computed Aggregate)</h3>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Constraints</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td><code>SERIAL</code></td><td>PK</td><td></td></tr>
+      <tr><td class="fk">cycleId</td><td><code>INTEGER</code></td><td>FK → ReviewCycle.id, NOT NULL</td><td></td></tr>
+      <tr><td class="fk">employeeId</td><td><code>INTEGER</code></td><td>FK → Employee.id, NOT NULL</td><td></td></tr>
+      <tr><td class="fk">criterionId</td><td><code>INTEGER</code></td><td>FK → EwayCriterion.id, NOT NULL</td><td></td></tr>
+      <tr><td>avgScore</td><td><code>NUMERIC(4,2)</code></td><td>NOT NULL</td><td>2 decimal precision as required</td></tr>
+      <tr><td>reviewCount</td><td><code>INTEGER</code></td><td>NOT NULL</td><td>Shown as "Based on X reviews"</td></tr>
+      <tr><td>overallAvg</td><td><code>NUMERIC(4,2)</code></td><td>NULLABLE</td><td>Stored only on the "overall" row</td></tr>
+      <tr><td>calculatedAt</td><td><code>TIMESTAMPTZ</code></td><td>DEFAULT NOW()</td><td></td></tr>
+      <tr><td colspan="4"><em>UNIQUE constraint on (cycleId, employeeId, criterionId)</em></td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.11 AuditLog <span class="badge badge-mvp2">MVP 2</span></h3>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="pk">id</td><td><code>BIGSERIAL</code></td><td>High-volume table</td></tr>
+      <tr><td class="fk">actorId</td><td><code>INTEGER</code></td><td>FK → Employee.id — who performed the action</td></tr>
+      <tr><td>action</td><td><code>VARCHAR(100)</code></td><td>e.g. CYCLE_PHASE_CHANGED, NOMINATION_SUBMITTED</td></tr>
+      <tr><td>entityType</td><td><code>VARCHAR(50)</code></td><td>e.g. 'ReviewCycle', 'Nomination'</td></tr>
+      <tr><td>entityId</td><td><code>INTEGER</code></td><td>ID of affected record</td></tr>
+      <tr><td>metadata</td><td><code>JSONB</code></td><td>Flexible payload (old/new values, notes)</td></tr>
+      <tr><td>createdAt</td><td><code>TIMESTAMPTZ</code></td><td>DEFAULT NOW()</td></tr>
+    </tbody>
+  </table>
+
+  
+  <h2>4. Design Gaps Found in the Spec</h2>
+
+  <div class="gap-box">
+    <div class="gap-title">Gap 1 — No per-question granularity in ReviewRating</div>
+    The spec explicitly states <em>"each question's answer needs to be recorded separately"</em> (25 sub-questions + 3 additional). The original model has <code>ReviewRating(criterionId, score)</code> which can only store one score per criterion, not per sub-question. <strong>EwayQuestion table is mandatory.</strong>
+  </div>
+
+  <div class="gap-box">
+    <div class="gap-title">Gap 2 — No junction table for Cycle ↔ Criteria selection</div>
+    The spec says admins "select active eWay criteria" per cycle. The <code>ReviewCycle</code> entity as specified has no FK list or join table for this. <strong>CycleCriteria join table is mandatory.</strong>
+  </div>
+
+  <div class="gap-box">
+    <div class="gap-title">Gap 3 — Additional Questions not mapped to Review entity</div>
+    The 3 additional questions (attention text, doing-well text, would-pick-for-team boolean) are not represented in the <code>Review</code> entity. They need either dedicated columns or to flow through <code>ReviewRating</code> via <code>EwayQuestion</code>. Recommendation: store <code>attentionComment</code>, <code>wouldPickForTeam</code> as columns on <code>Review</code> for simplicity; Additional Q2 ("doing well") maps to <code>doWellComment</code>.
+  </div>
+
+  <div class="gap-box">
+    <div class="gap-title">Gap 4 — isMandatory flag missing from Nomination</div>
+    The manager must be locked and cannot be removed. Without a <code>isMandatory</code> boolean on <code>Nomination</code> the UI has no DB-level signal to enforce this — it would be purely frontend logic, which is fragile.
+  </div>
+
+  <div class="gap-box">
+    <div class="gap-title">Gap 5 — No draft status for the Nomination set (vs individual nominees)</div>
+    A nomination row represents a single nominee. But the employee's entire nomination submission also has a state (DRAFT vs SUBMITTED). This is best handled with a <code>nominationStatus</code> column on the <code>Nomination</code> rows or a separate <code>NominationSubmission</code> header table.
+  </div>
+
+  <div class="gap-box">
+    <div class="gap-title">Gap 6 — XLSX import columns need to map to schema</div>
+    The employee XLSX has 8 columns (Key, First Name, Last Name, Job Title, Email, Department, Manager, Job Grade). Manager is stored as a <em>full name string</em>, not an ID. The import process must resolve manager names to <code>Employee.id</code> — this needs handling in the seeding logic. Also, <code>employeeKey</code> (HR system key) should be stored for idempotent re-imports.
+  </div>
+
+  
+  <h2>5. Seed Data Requirements</h2>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Employee Seed (from XLSX)</div>
+      <ul>
+        <li>57 employees across 8+ departments</li>
+        <li>Columns: Key, First/Last Name, Email, Dept, Manager, Job Title, Job Grade</li>
+        <li>Manager resolved by full name match</li>
+        <li>Import order: Departments first → Employees (no manager) → Set managerId in second pass</li>
+        <li>Default role = EMPLOYEE; promote specific users to HR_ADMIN / LINE_MANAGER</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">eWay Criteria Seed</div>
+      <ul>
+        <li>5 criteria: MASTERFUL, EXCELLENCE, EXECUTION, COMMITMENT, CONTRIBUTION</li>
+        <li>5 sub-questions each = 25 EwayQuestion rows</li>
+        <li>3 additional questions (on a 6th "ADDITIONAL" criterion)</li>
+        <li>Answer types: RATING (Q1–25), TEXT (AQ1, AQ2), BOOLEAN (AQ3)</li>
+        <li>All seeded in a single migration / seed script</li>
+      </ul>
+    </div>
+  </div>
+
+  
+  <h2>6. Score Calculation Logic (Data Layer)</h2>
+  <div class="section-note">
+    As confirmed in US-06-01 / TC-07-01 through TC-07-09. All computed values stored in <code>ReviewResult</code>.
+  </div>
+  <table>
+    <thead><tr><th>Step</th><th>Formula</th><th>Precision</th><th>Source rows</th></tr></thead>
+    <tbody>
+      <tr><td>Sub-question average per criterion per reviewer</td><td>AVG(ReviewRating.score) GROUP BY reviewId, criterionId</td><td>—</td><td>ReviewRating</td></tr>
+      <tr><td>Criterion average across all reviewers</td><td>AVG(above) GROUP BY employeeId, criterionId</td><td>ROUND to 2dp</td><td>ReviewRating → ReviewResult.avgScore</td></tr>
+      <tr><td>Overall employee average</td><td>AVG(criterionAvg) across all 5 elements</td><td>ROUND to 2dp</td><td>ReviewResult.overallAvg</td></tr>
+      <tr><td>Reviewer count</td><td>COUNT(DISTINCT reviewerId) WHERE status='SUBMITTED'</td><td>Integer</td><td>Review → ReviewResult.reviewCount</td></tr>
+      <tr><td>Draft exclusion</td><td>WHERE Review.status = 'SUBMITTED' only</td><td>—</td><td>TC-07-04 confirmed</td></tr>
+    </tbody>
+  </table>
+
+  
+  <h2>7. Recommended Indexes</h2>
+  <table>
+    <thead><tr><th>Table</th><th>Index Columns</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td>Employee</td><td><code>email</code></td><td>Login lookup</td></tr>
+      <tr><td>Employee</td><td><code>managerId</code></td><td>Manager's direct reports query</td></tr>
+      <tr><td>Employee</td><td><code>departmentId</code></td><td>HR department filter</td></tr>
+      <tr><td>Nomination</td><td><code>(cycleId, employeeId)</code></td><td>Employee's nomination list</td></tr>
+      <tr><td>Nomination</td><td><code>(cycleId, reviewerId)</code></td><td>Reviewer's outbound list</td></tr>
+      <tr><td>Review</td><td><code>(cycleId, reviewerId)</code></td><td>Pending reviews dashboard</td></tr>
+      <tr><td>ReviewRating</td><td><code>(reviewId)</code></td><td>Calculation query</td></tr>
+      <tr><td>ReviewResult</td><td><code>(cycleId, employeeId)</code></td><td>Results page</td></tr>
+      <tr><td>AuditLog</td><td><code>(entityType, entityId)</code></td><td>Audit trail drill-down</td></tr>
+    </tbody>
+  </table>
+
+  
+  <h2>8. Summary — What Needs to Be Built vs What Was Specified</h2>
+  <table>
+    <thead><tr><th>Entity</th><th>In Spec?</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Department</td><td>✅ Yes</td><td>Use as specified</td></tr>
+      <tr><td>Employee</td><td>✅ Yes</td><td>Add <code>employeeKey</code>, <code>jobTitle</code>, <code>jobGrade</code> columns from XLSX</td></tr>
+      <tr><td>ReviewCycle</td><td>✅ Yes</td><td>Add <code>minNominees</code>, <code>maxNominees</code> columns</td></tr>
+      <tr><td>EwayCriterion</td><td>✅ Yes</td><td>Use as specified</td></tr>
+      <tr><td><strong>EwayQuestion</strong></td><td>❌ Missing</td><td><span class="badge badge-gap">Must add</span> — required for 25 sub-questions + mixed answer types</td></tr>
+      <tr><td><strong>CycleCriteria</strong></td><td>❌ Missing</td><td><span class="badge badge-gap">Must add</span> — join table for cycle ↔ criteria selection</td></tr>
+      <tr><td>Nomination</td><td>✅ Yes</td><td>Add <code>isMandatory</code>, <code>nominationStatus</code>, <code>overrideNote</code></td></tr>
+      <tr><td>Review</td><td>✅ Yes</td><td>Add <code>attentionComment</code>, <code>wouldPickForTeam</code> for additional questions</td></tr>
+      <tr><td>ReviewRating</td><td>✅ Yes</td><td>Add <code>questionId</code> FK and <code>textAnswer</code> column</td></tr>
+      <tr><td>ReviewResult</td><td>✅ Yes</td><td>Add <code>overallAvg</code>, <code>calculatedAt</code></td></tr>
+      <tr><td>AuditLog</td><td>Implied (MVP2)</td><td><span class="badge badge-mvp2">MVP 2</span> — build if time allows</td></tr>
+    </tbody>
+  </table>
+
+  <footer>Made with IBM Bob</footer>
+</div>
+</body>
+</html>

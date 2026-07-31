@@ -1,0 +1,25 @@
+﻿# ─── Synthetic / seed data only — never commit real HR exports ───────────────
+# Block any XLSX that looks like a real employee export
+Employees Export*.xlsx
+
+# ─── Bob internal temp files ─────────────────────────────────────────────────
+.bob/tmp/
+
+# ─── OS & editor noise ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+
+# ─── Node / Next.js (for when the app is scaffolded) ─────────────────────────
+node_modules/
+.next/
+.env
+.env.local
+.env.*.local
+
+# ─── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.venv/
