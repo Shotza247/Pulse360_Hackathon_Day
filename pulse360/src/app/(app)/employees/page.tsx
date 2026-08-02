@@ -124,7 +124,7 @@ export default async function EmployeesPage({
                 </td>
                 <td className="px-4 py-3 text-gray-500 text-xs">{emp.jobGrade ?? "—"}</td>
                 <td className="px-4 py-3 text-right">
-                  <Link href={`/employees/${emp.id}/edit`} className="text-xs font-medium text-[#0f1f3d] hover:underline">Edit</Link>
+                  <Link href={`/employees/${emp.id}`} className="text-xs font-medium text-[#0f1f3d] hover:underline">Edit</Link>
                 </td>
               </tr>
             ))}
