@@ -10,8 +10,15 @@ export default async function MyResultsPage() {
   if (!session) redirect("/login");
   const userId = Number((session.user as any).id);
 
+  // Employees can only see results once cycle reaches ACCEPT or later
   const cycles = await prisma.reviewCycle.findMany({
-    where: { phase: { in: ["CONSULTATION", "ACCEPT", "CLOSED"] } },
+    where: { phase: { in: ["ACCEPT", "CLOSED"] } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Check if stuck in CONSULTATION (manager hasn't released yet)
+  const consultationCycle = await prisma.reviewCycle.findFirst({
+    where: { phase: "CONSULTATION" },
     orderBy: { createdAt: "desc" },
   });
 
@@ -20,7 +27,15 @@ export default async function MyResultsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 mb-8">My Results</h1>
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <p className="text-gray-400 text-sm">Results are not available yet. Please wait for the cycle to reach the results phase.</p>
+          {consultationCycle ? (
+            <>
+              <p className="text-3xl mb-3">🔒</p>
+              <p className="text-gray-700 text-sm font-semibold mb-1">Results are being reviewed by your manager</p>
+              <p className="text-gray-400 text-xs">Your results will be available once HR releases them.</p>
+            </>
+          ) : (
+            <p className="text-gray-400 text-sm">Results are not available yet. Please wait for the cycle to reach the results phase.</p>
+          )}
         </div>
       </div>
     );
