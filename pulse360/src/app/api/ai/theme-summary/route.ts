@@ -39,8 +39,9 @@ export async function POST(req: NextRequest) {
   const doWellComments = reviews.map(r => r.doWellComment).filter(Boolean).join("\n- ");
   const improveComments = reviews.map(r => r.improveComment).filter(Boolean).join("\n- ");
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+  const apiKey = process.env.OPENAI_API_KEY?.trim().replace(/\s+/g, "");
+
+  function stubResponse() {
     return NextResponse.json({
       strengths: [
         "Demonstrates consistent commitment and reliability across assignments",
@@ -56,6 +57,8 @@ export async function POST(req: NextRequest) {
       stub: true,
     });
   }
+
+  if (!apiKey) return stubResponse();
 
   const openai = new OpenAI({ apiKey });
 
@@ -78,10 +81,10 @@ Respond ONLY with valid JSON in this exact format:
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.5,
-      max_tokens: 400,
+      max_completion_tokens: 400,
       response_format: { type: "json_object" },
     });
 
@@ -95,6 +98,6 @@ Respond ONLY with valid JSON in this exact format:
     });
   } catch (err) {
     console.error("OpenAI theme-summary error:", err);
-    return NextResponse.json({ error: "AI generation failed" }, { status: 500 });
+    return stubResponse();
   }
 }

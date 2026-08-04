@@ -15,15 +15,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    // Return a deterministic stub so the UX still works without a key
+  const apiKey = process.env.OPENAI_API_KEY?.trim().replace(/\s+/g, "");
+
+  function stubResponse() {
     return NextResponse.json({
       doWell: `${employeeName} consistently demonstrates strong performance across key competencies. Their dedication and collaborative spirit stand out noticeably to the team.`,
       improve: `${employeeName} could benefit from focusing on areas rated below 3. Building more targeted development goals around these areas would support continued growth.`,
       stub: true,
     });
   }
+
+  if (!apiKey) return stubResponse();
 
   const openai = new OpenAI({ apiKey });
 
@@ -46,10 +48,10 @@ Respond ONLY with valid JSON in this exact format:
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      max_tokens: 300,
+      max_completion_tokens: 300,
       response_format: { type: "json_object" },
     });
 
@@ -62,6 +64,6 @@ Respond ONLY with valid JSON in this exact format:
     });
   } catch (err) {
     console.error("OpenAI suggest-comments error:", err);
-    return NextResponse.json({ error: "AI generation failed" }, { status: 500 });
+    return stubResponse();
   }
 }
