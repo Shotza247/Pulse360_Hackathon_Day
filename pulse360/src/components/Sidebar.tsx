@@ -31,7 +31,10 @@ const NAV: NavItem[] = [
   { label: "Review Cycles", href: "/cycles",     roles: ["HR_ADMIN"],                           icon: <Icon d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/> },
   { label: "Criteria",     href: "/criteria",    roles: ["HR_ADMIN"],                           icon: <Icon d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/> },
   { label: "All Results",  href: "/results",     roles: ["HR_ADMIN"],                           icon: <Icon d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/> },
+<<<<<<< HEAD
   { label: "Analytics",    href: "/analytics",   roles: ["HR_ADMIN"],                           icon: <Icon d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/> },
+=======
+>>>>>>> 0afc2f0474ffbe5a69d615b7b95059b78ff59745
   { label: "Approvals",    href: "/approvals",   roles: ["HR_ADMIN","LINE_MANAGER"],             icon: <Icon d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/> },
   { label: "Team Results", href: "/manager/results", roles: ["LINE_MANAGER"],                   icon: <Icon d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/> },
   { label: "Nominations",  href: "/nominations", roles: ["EMPLOYEE","LINE_MANAGER"],            icon: <Icon d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/> },
