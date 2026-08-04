@@ -1,0 +1,100 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import OpenAI from "openai";
+
+// POST /api/ai/theme-summary
+// Body: { employeeId, cycleId }
+export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { employeeId, cycleId } = await req.json();
+  if (!employeeId || !cycleId) {
+    return NextResponse.json({ error: "Missing employeeId or cycleId" }, { status: 400 });
+  }
+
+  // Fetch the employee name
+  const employee = await prisma.employee.findUnique({
+    where: { id: Number(employeeId) },
+    select: { firstName: true, lastName: true },
+  });
+  if (!employee) return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+
+  // Fetch all submitted reviews for this employee in this cycle
+  const reviews = await prisma.review.findMany({
+    where: {
+      cycleId: Number(cycleId),
+      employeeId: Number(employeeId),
+      status: "SUBMITTED",
+    },
+    select: { doWellComment: true, improveComment: true, attentionComment: true },
+  });
+
+  if (reviews.length === 0) {
+    return NextResponse.json({ error: "No reviews found for this employee" }, { status: 404 });
+  }
+
+  const doWellComments = reviews.map(r => r.doWellComment).filter(Boolean).join("\n- ");
+  const improveComments = reviews.map(r => r.improveComment).filter(Boolean).join("\n- ");
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json({
+      strengths: [
+        "Demonstrates consistent commitment and reliability across assignments",
+        "Collaborates effectively and contributes positively to team dynamics",
+        "Shows initiative and takes ownership of deliverables",
+      ],
+      improvements: [
+        "Could strengthen communication clarity in high-stakes situations",
+        "Benefit from more proactive stakeholder engagement on complex projects",
+        "Developing deeper domain expertise would accelerate impact",
+      ],
+      sentiment: "Positive — peer reviewers recognise strong core performance with targeted areas for growth.",
+      stub: true,
+    });
+  }
+
+  const openai = new OpenAI({ apiKey });
+
+  const prompt = `You are an HR analytics assistant summarising 360° peer feedback for ${employee.firstName} ${employee.lastName}.
+
+"What they do well" comments:
+- ${doWellComments || "(none)"}
+
+"Areas to improve" comments:
+- ${improveComments || "(none)"}
+
+Identify the top 3 recurring themes in strengths and top 3 in improvement areas. Also provide a one-sentence overall sentiment summary.
+
+Respond ONLY with valid JSON in this exact format:
+{
+  "strengths": ["theme1", "theme2", "theme3"],
+  "improvements": ["theme1", "theme2", "theme3"],
+  "sentiment": "..."
+}`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.5,
+      max_tokens: 400,
+      response_format: { type: "json_object" },
+    });
+
+    const content = completion.choices[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(content);
+
+    return NextResponse.json({
+      strengths: parsed.strengths ?? [],
+      improvements: parsed.improvements ?? [],
+      sentiment: parsed.sentiment ?? "",
+    });
+  } catch (err) {
+    console.error("OpenAI theme-summary error:", err);
+    return NextResponse.json({ error: "AI generation failed" }, { status: 500 });
+  }
+}

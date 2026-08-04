@@ -15,8 +15,13 @@ export default async function ResultsPage() {
   const isManager = user.role === "LINE_MANAGER";
   const userId = Number(user.id);
 
+  // HR Admin and Manager see results from CONSULTATION; employees only from ACCEPT
+  const phaseFilter = (isAdmin || isManager)
+    ? ["CONSULTATION", "ACCEPT", "CLOSED"] as const
+    : ["ACCEPT", "CLOSED"] as const;
+
   const latestCycle = await prisma.reviewCycle.findFirst({
-    where: { phase: { in: ["CONSULTATION", "ACCEPT", "CLOSED"] } },
+    where: { phase: { in: phaseFilter as any } },
     orderBy: { createdAt: "desc" },
   });
 

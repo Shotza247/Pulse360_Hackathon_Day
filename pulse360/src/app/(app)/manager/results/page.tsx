@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { AISummaryPanel } from "@/components/AISummaryPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -167,6 +168,15 @@ export default async function ManagerResultsPage({
                         })}
                       </div>
                     </div>
+                    {/* AI Theme Summary */}
+                    {latestCycle && (
+                      <AISummaryPanel
+                        employeeId={focusEmployee.id}
+                        cycleId={latestCycle.id}
+                        employeeName={`${focusEmployee.firstName} ${focusEmployee.lastName}`}
+                      />
+                    )}
+
                     {/* Anonymised comments */}
                     {focusReviews.length > 0 && (
                       <div className="bg-white rounded-xl border border-gray-200 p-5">
