@@ -99,7 +99,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-6 text-center text-xs text-gray-400">
-            Powered by Ovations Technologies · IBM Bob Team
+            Powered by IBM Bob · Hackathon V2
           </p>
         </div>
       </div>

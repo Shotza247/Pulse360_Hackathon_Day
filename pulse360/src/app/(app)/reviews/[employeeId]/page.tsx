@@ -162,7 +162,7 @@ export default function ReviewFormPage({ params }: { params: Promise<{ employeeI
       {error && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
 
       <div className="space-y-6">
-        {/* eWay Rating criteria */}
+        {/* Rating criteria */}
         {criteria.filter((c) => c.questions.some((q) => q.answerType === "RATING")).map((criterion) => (
           <div key={criterion.id} className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-sm font-bold text-[#0f1f3d] uppercase tracking-wider mb-1">{criterion.name}</h2>

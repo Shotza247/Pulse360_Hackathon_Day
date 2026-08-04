@@ -89,7 +89,7 @@ export default function CriteriaPage() {
     <div>
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">eWay Criteria</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Pulse360 Criteria</h1>
           <p className="text-sm text-gray-500 mt-1">The competency pillars and their questions used in every review cycle</p>
         </div>
         <button
@@ -110,7 +110,7 @@ export default function CriteriaPage() {
       {showAdd && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h2 className="text-base font-bold text-gray-900 mb-1">Add New eWay Criterion</h2>
+            <h2 className="text-base font-bold text-gray-900 mb-1">Add New Criterion</h2>
             <p className="text-xs text-gray-500 mb-4">New criteria will be available for selection in upcoming review cycles.</p>
             <div className="space-y-3">
               <div>

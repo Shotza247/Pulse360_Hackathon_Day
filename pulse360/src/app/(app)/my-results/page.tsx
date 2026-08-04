@@ -82,7 +82,7 @@ export default async function MyResultsPage() {
 
           {/* Per-criterion breakdown */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h2 className="text-sm font-semibold text-gray-900 mb-4">Score by eWay Criterion</h2>
+            <h2 className="text-sm font-semibold text-gray-900 mb-4">Score by Criterion</h2>
             <div className="space-y-4">
               {criterionResults.map((r) => {
                 const score = Number(r.avgScore);

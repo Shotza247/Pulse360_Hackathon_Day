@@ -150,7 +150,7 @@ async function AdminDashboard({ userId, name }: { userId: number; name: string }
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard label="Employees"     value={totalEmployees} sub="currently active"      accent="navy"   />
         <MetricCard label="Line Managers" value={totalManagers}  sub="managing teams"        accent="blue"   />
-        <MetricCard label="eWay Criteria" value={totalCriteria}  sub="active competencies"   accent="purple" />
+        <MetricCard label="Criteria" value={totalCriteria}  sub="active competencies"   accent="purple" />
         <MetricCard label="Cycle Phase"   value={activeCycle?.phase ?? "—"} sub={activeCycle?.name ?? "no active cycle"} accent="teal" />
       </div>
 
@@ -229,7 +229,7 @@ async function AdminDashboard({ userId, name }: { userId: number; name: string }
               { href: "/cycles",        icon: "🔄", label: "Manage cycles",      sub: "Advance or create review cycles" },
               { href: "/approvals",     icon: "✅", label: "Review approvals",   sub: "Override nomination decisions" },
               { href: "/results",       icon: "📊", label: "View all results",   sub: "Organisation-wide score table" },
-              { href: "/criteria",      icon: "📋", label: "eWay Criteria",      sub: "Edit competency pillars" },
+              { href: "/criteria",      icon: "📋", label: "Criteria",           sub: "Edit competency pillars" },
             ].map(a => (
               <Link key={a.href} href={a.href}
                 className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition group">
@@ -509,7 +509,7 @@ async function EmployeeDashboard({ userId, name }: { userId: number; name: strin
           <div className="space-y-1">
             {[
               { href: "/nominations", icon: "🎯", label: "My nominations",  sub: "Choose who reviews you" },
-              { href: "/reviews",     icon: "✍️", label: "My reviews",      sub: "Rate colleagues on eWay criteria" },
+              { href: "/reviews",     icon: "✍️", label: "My reviews",      sub: "Rate colleagues on criteria" },
               { href: "/my-results",  icon: "📊", label: "My results",      sub: "View your anonymised scores" },
             ].map(a => (
               <Link key={a.href} href={a.href}

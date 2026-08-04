@@ -92,7 +92,7 @@ export default function AnalyticsPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Department Analytics</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Cycle: <strong>{data.cycle.name}</strong> · Average eWay scores per department × criterion
+          Cycle: <strong>{data.cycle.name}</strong> · Average scores per department × criterion
         </p>
       </div>
 

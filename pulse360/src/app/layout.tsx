@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Pulse360 — Performance Review",
-  description: "Internal 360° performance review platform by Ovations Technologies",
+  description: "Internal 360° performance review platform",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
