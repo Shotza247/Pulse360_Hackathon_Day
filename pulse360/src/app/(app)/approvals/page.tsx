@@ -42,7 +42,8 @@ export default function ApprovalsPage() {
       // Derive cycle from nominations context via cycles/list
       const cycleRes = await fetch("/api/cycles/list");
       const cycles: Cycle[] = cycleRes.ok ? await cycleRes.json() : [];
-      const activeCycle = cycles.find((c) => ["APPROVE", "NOMINATE"].includes(c.phase)) ?? null;
+      // Only surface approvals when the cycle is actually in APPROVE phase
+      const activeCycle = cycles.find((c) => c.phase === "APPROVE") ?? null;
       setCycle(activeCycle);
     } else {
       setNominations([]);

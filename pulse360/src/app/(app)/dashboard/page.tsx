@@ -17,17 +17,17 @@ export default async function DashboardPage() {
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-const PHASE_ORDER = ["DRAFT","NOMINATE","APPROVE","REVIEW","CALCULATION","CONSULTATION","ACCEPT","CLOSED"] as const;
+const PHASE_ORDER = ["DRAFT","NOMINATE","APPROVE","REVIEW","CONSULTATION","ACCEPT","CLOSED"] as const;
 type Phase = typeof PHASE_ORDER[number];
 
-const PHASE_META: Record<Phase, { color: string; bg: string; dot: string; label: string }> = {
+const PHASE_META: Record<string, { color: string; bg: string; dot: string; label: string }> = {
   DRAFT:        { color: "text-gray-600",   bg: "bg-gray-100",   dot: "bg-gray-400",   label: "Draft" },
-  NOMINATE:     { color: "text-blue-700",   bg: "bg-blue-100",   dot: "bg-blue-500",   label: "Nominating" },
-  APPROVE:      { color: "text-amber-700",  bg: "bg-amber-100",  dot: "bg-amber-500",  label: "Approving" },
-  REVIEW:       { color: "text-purple-700", bg: "bg-purple-100", dot: "bg-purple-500", label: "Reviewing" },
+  NOMINATE:     { color: "text-blue-700",   bg: "bg-blue-100",   dot: "bg-blue-500",   label: "Nominations Open" },
+  APPROVE:      { color: "text-amber-700",  bg: "bg-amber-100",  dot: "bg-amber-500",  label: "Approvals Open" },
+  REVIEW:       { color: "text-purple-700", bg: "bg-purple-100", dot: "bg-purple-500", label: "Reviews Open" },
   CALCULATION:  { color: "text-indigo-700", bg: "bg-indigo-100", dot: "bg-indigo-500", label: "Calculating" },
-  CONSULTATION: { color: "text-teal-700",   bg: "bg-teal-100",   dot: "bg-teal-500",   label: "Consulting" },
-  ACCEPT:       { color: "text-green-700",  bg: "bg-green-100",  dot: "bg-green-500",  label: "Results Out" },
+  CONSULTATION: { color: "text-teal-700",   bg: "bg-teal-100",   dot: "bg-teal-500",   label: "Manager Consultation" },
+  ACCEPT:       { color: "text-green-700",  bg: "bg-green-100",  dot: "bg-green-500",  label: "Results Released" },
   CLOSED:       { color: "text-gray-500",   bg: "bg-gray-200",   dot: "bg-gray-400",   label: "Closed" },
 };
 

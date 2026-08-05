@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   const cycle = cycleId
     ? await prisma.reviewCycle.findUnique({ where: { id: Number(cycleId) } })
-    : await prisma.reviewCycle.findFirst({ where: { phase: { in: ["APPROVE", "NOMINATE"] } } });
+    : await prisma.reviewCycle.findFirst({ where: { phase: "APPROVE" } });
 
   if (!cycle) return NextResponse.json([]);
 
