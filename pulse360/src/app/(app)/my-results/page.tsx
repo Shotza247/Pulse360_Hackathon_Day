@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { AISummaryPanel } from "@/components/AISummaryPanel";
+import { SelfAssessmentPanel } from "@/components/SelfAssessmentPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -106,6 +107,17 @@ export default async function MyResultsPage() {
           <AISummaryPanel
             employeeId={userId}
             cycleId={cycle.id}
+            employeeName="you"
+          />
+
+          {/* Self-Assessment + Gap Analysis */}
+          <SelfAssessmentPanel
+            cycleId={cycle.id}
+            criterionResults={criterionResults.map((r) => ({
+              criterionId: r.criterionId,
+              criterion: r.criterion ? { id: r.criterion.id, name: r.criterion.name } : null,
+              avgScore: Number(r.avgScore),
+            }))}
             employeeName="you"
           />
 
