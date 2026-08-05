@@ -53,17 +53,11 @@ Pulse360 replaces the original **eWay 360° Review** name with a modern product 
 
 ## Team
 
-| Name | Role |
-|---|---|
-| Romeo Ndlovu | Data Architect / Engineer / Scientist |
-| Mark Mallabone | IBM Bob Platform Lead |
-| Rohit Raman | Developer |
-| Lionel Raseemela | Developer |
-| Tshegofatso Seopela | Developer |
-| Yaasir Jada | Developer |
-| Welcome Mncube | Developer |
-| Teneale Messina | Developer |
-| Makhosonke Nkosi | Developer |
+| Name            | Role                                  |
+| -----------------| ---------------------------------------|
+| Jabulani Ndlovu | Data Architect / Engineer / Scientist |
+| Jabulani Ndlovu | Agentic AI BOB Developer              |
+| IBM BOB         | Developer                             |
 
 ---
 
@@ -510,4 +504,4 @@ git push origin main
 
 ---
 
-*Built with **IBM Bob** · Ovations Technologies Hackathon V2 · 2026*
+*Built with **IBM Bob** · Pulse360 Technologies Hackathon V2 · 2026*
