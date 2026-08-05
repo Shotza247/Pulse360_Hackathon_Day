@@ -113,7 +113,7 @@ Respond ONLY with valid JSON:
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-5.1",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.5,
       max_completion_tokens: 1200,
