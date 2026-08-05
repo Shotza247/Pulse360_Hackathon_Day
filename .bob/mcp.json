@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "pulse360-mcp": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\RomeoNdlovu\\Downloads\\Work\\Projects_InProgress\\Ovations_AgenticBob-Hackathon\\Hackathon_Day\\pulse360\\mcp-server\\build\\index.js"
+      ]
+    }
+  }
+}
