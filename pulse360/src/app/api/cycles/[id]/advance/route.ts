@@ -3,10 +3,14 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { CyclePhase } from "@prisma/client";
+import { notifyPhaseTransition } from "@/lib/notifications";
 
+// CALCULATION is not a user-visible phase — scores are computed automatically
+// when HR advances REVIEW → CONSULTATION. The CALCULATION phase in the DB enum
+// is kept for audit but skipped in the UI advance flow.
 const PHASE_NEXT: Record<string, CyclePhase> = {
   DRAFT: "NOMINATE", NOMINATE: "APPROVE", APPROVE: "REVIEW",
-  REVIEW: "CALCULATION", CALCULATION: "CONSULTATION", CONSULTATION: "ACCEPT", ACCEPT: "CLOSED",
+  REVIEW: "CONSULTATION", CONSULTATION: "ACCEPT", ACCEPT: "CLOSED",
 };
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -24,8 +28,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const next = PHASE_NEXT[cycle.phase];
   if (!next) return NextResponse.json({ error: "Cycle is already closed" }, { status: 400 });
 
-  // ── When advancing INTO CALCULATION: compute and store averages ────────────
-  if (next === "CALCULATION") {
+  // ── When advancing REVIEW → CONSULTATION: silently calculate then skip to CONSULTATION ──
+  if (next === "CONSULTATION") {
     await calculateResults(cycleId);
   }
 
@@ -33,6 +37,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     where: { id: cycleId },
     data: { phase: next },
   });
+
+  // Fire notifications for the new phase (non-blocking)
+  notifyPhaseTransition(cycleId, cycle.name, next).catch(console.error);
 
   return NextResponse.json(updated);
 }

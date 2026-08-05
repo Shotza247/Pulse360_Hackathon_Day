@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const PHASE_ORDER = ["DRAFT","NOMINATE","APPROVE","REVIEW","CALCULATION","CONSULTATION","ACCEPT","CLOSED"] as const;
+// CALCULATION is handled automatically — not shown as a user-visible step
+const PHASE_ORDER = ["DRAFT","NOMINATE","APPROVE","REVIEW","CONSULTATION","ACCEPT","CLOSED"] as const;
 type Phase = typeof PHASE_ORDER[number];
 
 const PHASE_NEXT: Record<string, Phase> = {
   DRAFT: "NOMINATE", NOMINATE: "APPROVE", APPROVE: "REVIEW",
-  REVIEW: "CALCULATION", CALCULATION: "CONSULTATION", CONSULTATION: "ACCEPT", ACCEPT: "CLOSED",
+  REVIEW: "CONSULTATION", CONSULTATION: "ACCEPT", ACCEPT: "CLOSED",
 };
 
 const PHASE_COLORS: Record<string, string> = {
@@ -19,14 +20,22 @@ const PHASE_COLORS: Record<string, string> = {
 };
 
 const PHASE_DESC: Record<string, string> = {
-  DRAFT: "Cycle created. Advance to open nominations for employees.",
-  NOMINATE: "Employees are nominating their reviewers. Advance when nominations are done.",
-  APPROVE: "Managers are approving nominations. Advance to begin reviewing.",
-  REVIEW: "Reviewers are completing their reviews. Advance to calculate scores.",
-  CALCULATION: "System calculates averages. Advance to share results with managers.",
-  CONSULTATION: "Managers reviewing team results. Advance to share with employees.",
-  ACCEPT: "Employees viewing their results. Advance to close cycle.",
-  CLOSED: "Cycle complete. Results are now read-only historical record.",
+  DRAFT:        "Cycle created. Advance to open nominations for employees.",
+  NOMINATE:     "Employees are nominating their reviewers. Advance when nominations are complete.",
+  APPROVE:      "Managers are reviewing and approving nominations for their teams. Advance to begin the review period.",
+  REVIEW:       "Reviewers are completing their peer reviews. Advance to close reviews — scores will be calculated automatically.",
+  CONSULTATION: "Scores are calculated. Managers can see their team's results privately before employees are notified. Advance when managers are ready.",
+  ACCEPT:       "Employees can now view their own results and comments. Advance to close the cycle once everyone has reviewed.",
+  CLOSED:       "Cycle complete. Results are now a read-only historical record.",
+};
+
+const PHASE_ADVANCE_LABEL: Record<string, string> = {
+  DRAFT:        "Open Nominations →",
+  NOMINATE:     "Close Nominations & Open Approvals →",
+  APPROVE:      "Close Approvals & Begin Reviews →",
+  REVIEW:       "Close Reviews & Release to Managers →",
+  CONSULTATION: "Release Results to Employees →",
+  ACCEPT:       "Close Cycle →",
 };
 
 type Cycle = {
@@ -100,7 +109,7 @@ export function CycleList({ initialCycles }: { initialCycles: Cycle[] }) {
                     disabled={isAdvancing}
                     className="flex-shrink-0 rounded-lg border-2 border-[#0f1f3d] text-[#0f1f3d] text-xs font-bold px-4 py-2 hover:bg-[#0f1f3d] hover:text-white disabled:opacity-50 transition whitespace-nowrap"
                   >
-                    {isAdvancing ? "Advancing…" : `Advance → ${nextPhase}`}
+                    {isAdvancing ? "Advancing…" : (PHASE_ADVANCE_LABEL[cycle.phase] ?? `Advance → ${nextPhase}`)}
                   </button>
                 )}
                 {cycle.phase === "CLOSED" && (
