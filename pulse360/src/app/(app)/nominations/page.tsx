@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 type Employee = { id: number; firstName: string; lastName: string; jobTitle: string | null; department: { name: string } };
 type Nomination = { id: number; reviewer: Employee; isMandatory: boolean; approvalStatus: string };
-type Cycle = { id: number; name: string; phase: string; minNominees: number; maxNominees: number };
+type Cycle = { id: number; name: string; phase: string; minNominees: number; maxNominees: number; effectiveMinNominees: number; effectiveMaxNominees: number };
 
 export default function NominationsPage() {
   const router = useRouter();
@@ -84,14 +84,16 @@ export default function NominationsPage() {
     </div>
   );
 
+  const effectiveMin = cycle.effectiveMinNominees ?? cycle.minNominees;
+  const effectiveMax = cycle.effectiveMaxNominees ?? cycle.maxNominees;
   const submitted = nominations.every((n) => n.approvalStatus !== "PENDING" || n.isMandatory) && nominations.length > 0;
-  const canSubmit = nominations.length >= cycle.minNominees;
+  const canSubmit = nominations.length >= effectiveMin;
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">My Nominations</h1>
-        <p className="text-sm text-gray-500 mt-1">Cycle: <strong>{cycle.name}</strong> · Select {cycle.minNominees}–{cycle.maxNominees} reviewers</p>
+        <p className="text-sm text-gray-500 mt-1">Cycle: <strong>{cycle.name}</strong> · Select {effectiveMin}–{effectiveMax} reviewer{effectiveMax !== 1 ? "s" : ""}</p>
       </div>
 
       {error && <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -101,7 +103,7 @@ export default function NominationsPage() {
         {/* My Reviewers */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-900">My Reviewers ({nominations.length}/{cycle.maxNominees})</h2>
+            <h2 className="text-sm font-semibold text-gray-900">My Reviewers ({nominations.length}/{effectiveMax})</h2>
             {canSubmit && (
               <button onClick={submitNominations} disabled={saving}
                 className="text-xs font-semibold rounded-lg bg-[#0f1f3d] text-white px-3 py-1.5 hover:bg-[#1a3160] disabled:opacity-60 transition">
@@ -136,8 +138,8 @@ export default function NominationsPage() {
               ))}
             </div>
           )}
-          {nominations.length < cycle.minNominees && (
-            <p className="mt-3 text-xs text-amber-600">Add {cycle.minNominees - nominations.length} more reviewer(s) to submit</p>
+          {nominations.length < effectiveMin && (
+            <p className="mt-3 text-xs text-amber-600">Add {effectiveMin - nominations.length} more reviewer{effectiveMin - nominations.length !== 1 ? "s" : ""} to submit</p>
           )}
         </div>
 
@@ -159,7 +161,7 @@ export default function NominationsPage() {
                     <p className="text-xs text-gray-500">{emp.jobTitle ?? emp.department.name}</p>
                   </div>
                 </div>
-                <button onClick={() => addNomination(emp.id)} disabled={saving || nominations.length >= cycle.maxNominees}
+                <button onClick={() => addNomination(emp.id)} disabled={saving || nominations.length >= effectiveMax}
                   className="text-xs font-semibold rounded-lg border border-[#0f1f3d] text-[#0f1f3d] px-3 py-1 hover:bg-[#0f1f3d] hover:text-white disabled:opacity-40 transition">
                   Add
                 </button>
