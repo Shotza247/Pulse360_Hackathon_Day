@@ -8,9 +8,7 @@ services:
     branch: main
     autoDeployTrigger: checksPass
     buildCommand: npm ci && npx prisma generate && npm run build
-    preDeployCommand: npm run db:migrate
-    initialDeployHook: npm run db:seed
-    startCommand: npm start
+    startCommand: npm run render:start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV

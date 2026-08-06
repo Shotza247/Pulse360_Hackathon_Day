@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "db:migrate": "prisma migrate deploy",
-    "db:seed": "node scripts/seed-database.js"
+    "db:seed": "node scripts/seed-database.js",
+    "render:start": "npm run db:migrate && npm run db:seed && next start -H 0.0.0.0"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",

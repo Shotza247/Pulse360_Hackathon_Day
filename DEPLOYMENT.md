@@ -4,7 +4,7 @@ This repository is ready to deploy the `pulse360` Next.js app on Render with man
 
 ## Render
 
-The Blueprint starts on Render's free plans. Upgrade the web service and database plans in `render.yaml` when you need always-on compute, more storage, or stronger production guarantees.
+The Blueprint starts on Render's free plans. Free web services do not support Render pre-deploy commands, so database migration and seed run in `render:start`. Upgrade the web service plan and move `npm run db:migrate` back to `preDeployCommand` when you need a stricter production deployment flow.
 
 1. Commit and push `render.yaml` to `main`.
 2. In Render, create a new Blueprint from this GitHub repo.
@@ -13,8 +13,8 @@ The Blueprint starts on Render's free plans. Upgrade the web service and databas
    - `pulse360-db`, a managed PostgreSQL database
 4. On deploy, Render runs:
    - `npm ci && npx prisma generate && npm run build`
-   - `npm run db:migrate` before starting the app
-   - `npm run db:seed` once after the first successful deploy
+   - `npm run db:migrate` when the service starts
+   - `npm run db:seed` when the service starts
 5. Fill `NEXTAUTH_URL` with the app's public Render URL, for example `https://your-service.onrender.com`.
 6. Fill `OPENAI_API_KEY` when Render prompts for it. Leave it blank only if you do not need the AI routes yet.
 
