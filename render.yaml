@@ -7,7 +7,7 @@ services:
     rootDir: pulse360
     branch: main
     autoDeployTrigger: checksPass
-    buildCommand: npm ci && npx prisma generate && npm run build
+    buildCommand: npm ci --include=dev && npx prisma generate && npm run build && npm prune --omit=dev
     startCommand: npm run render:start
     healthCheckPath: /api/health
     envVars:
