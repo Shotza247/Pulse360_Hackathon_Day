@@ -11,55 +11,90 @@ CREATE EXTENSION IF NOT EXISTS "citext";     -- case-insensitive text for emails
 -- =============================================================================
 
 -- â”€â”€ Employee role â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-CREATE TYPE employee_role AS ENUM (
-  'HR_ADMIN',
-  'LINE_MANAGER',
-  'EMPLOYEE'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'employee_role') THEN
+    CREATE TYPE employee_role AS ENUM (
+      'HR_ADMIN',
+      'LINE_MANAGER',
+      'EMPLOYEE'
+    );
+  END IF;
+END $$;
 
 -- â”€â”€ Review cycle phases (advance-only, 8 steps) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-CREATE TYPE cycle_phase AS ENUM (
-  'DRAFT',
-  'NOMINATE',
-  'APPROVE',
-  'REVIEW',
-  'CALCULATION',
-  'CONSULTATION',
-  'ACCEPT',
-  'CLOSED'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'cycle_phase') THEN
+    CREATE TYPE cycle_phase AS ENUM (
+      'DRAFT',
+      'NOMINATE',
+      'APPROVE',
+      'REVIEW',
+      'CALCULATION',
+      'CONSULTATION',
+      'ACCEPT',
+      'CLOSED'
+    );
+  END IF;
+END $$;
 
 -- â”€â”€ Nomination direction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-CREATE TYPE nomination_direction AS ENUM (
-  'INBOUND',    -- reviewer was nominated by the employee to review them
-  'OUTBOUND'    -- employee nominated themselves to review someone else
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'nomination_direction') THEN
+    CREATE TYPE nomination_direction AS ENUM (
+      'INBOUND',
+      'OUTBOUND'
+    );
+  END IF;
+END $$;
 
 -- â”€â”€ Nomination approval status (per-nominee) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-CREATE TYPE nomination_approval AS ENUM (
-  'PENDING',
-  'APPROVED',
-  'REJECTED'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'nomination_approval') THEN
+    CREATE TYPE nomination_approval AS ENUM (
+      'PENDING',
+      'APPROVED',
+      'REJECTED'
+    );
+  END IF;
+END $$;
 
 -- â”€â”€ Nomination submission status (employee's overall set) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-CREATE TYPE nomination_submission AS ENUM (
-  'DRAFT',
-  'SUBMITTED'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'nomination_submission') THEN
+    CREATE TYPE nomination_submission AS ENUM (
+      'DRAFT',
+      'SUBMITTED'
+    );
+  END IF;
+END $$;
 
 -- â”€â”€ Review status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-CREATE TYPE review_status AS ENUM (
-  'DRAFT',
-  'SUBMITTED'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'review_status') THEN
+    CREATE TYPE review_status AS ENUM (
+      'DRAFT',
+      'SUBMITTED'
+    );
+  END IF;
+END $$;
 
 -- â”€â”€ Question answer type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-CREATE TYPE question_answer_type AS ENUM (
-  'RATING',     -- numeric 1â€“5 score
-  'TEXT',       -- free-text response
-  'BOOLEAN'     -- yes / no
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'question_answer_type') THEN
+    CREATE TYPE question_answer_type AS ENUM (
+      'RATING',
+      'TEXT',
+      'BOOLEAN'
+    );
+  END IF;
+END $$;
 -- =============================================================================
 -- Pulse360 â€” 03_schema.sql
 -- Full database schema for the Pulse360 360Â° Performance Review application
@@ -120,6 +155,8 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trg_employee_updated_at ON employee;
+
 CREATE TRIGGER trg_employee_updated_at
   BEFORE UPDATE ON employee
   FOR EACH ROW EXECUTE FUNCTION fn_set_updated_at();
@@ -143,7 +180,7 @@ CREATE TABLE IF NOT EXISTS review_cycle (
 );
 
 -- Enforce: only one non-CLOSED cycle can exist at any time
-CREATE UNIQUE INDEX uix_one_active_cycle
+CREATE UNIQUE INDEX IF NOT EXISTS uix_one_active_cycle
   ON review_cycle (id)
   WHERE phase <> 'CLOSED';
 
