@@ -15,6 +15,8 @@ desktop.ini
 # ─── Node / Next.js (for when the app is scaffolded) ─────────────────────────
 node_modules/
 .next/
+.npm-cache/
+work-npm-cache/
 .env
 .env.local
 .env.*.local

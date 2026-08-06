@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: pulse360
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: pulse360
+    branch: main
+    autoDeployTrigger: checksPass
+    buildCommand: npm ci && npx prisma generate && npm run build
+    preDeployCommand: npm run db:migrate
+    initialDeployHook: npm run db:seed
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pulse360-db
+          property: connectionString
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: NEXTAUTH_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+
+databases:
+  - name: pulse360-db
+    databaseName: pulse360
+    user: pulse360_user
+    plan: free
+    region: oregon
