@@ -28,6 +28,18 @@ For safer production deploys, enable branch protection on `main` and require the
 
 Render is configured to call `/api/health`. The endpoint verifies both the app and database connection.
 
+## First Successful Deployment
+
+The first successful full-stack deployment was verified on 2026-08-07:
+
+```text
+All migrations have been successfully applied.
+Database seed completed.
+Ready in 1503ms
+Your service is live
+Available at your primary URL https://pulse360-gkt8.onrender.com
+```
+
 After the first deploy:
 
 1. In Render, enable failure notifications for deploy failures and unhealthy services.

@@ -40,6 +40,7 @@ const PHASE_ADVANCE_LABEL: Record<string, string> = {
 
 type Cycle = {
   id: number; name: string; phase: Phase;
+  description: string | null;
   startDate: string; endDate: string;
   createdBy: { firstName: string; lastName: string };
 };
@@ -83,6 +84,9 @@ export function CycleList({ initialCycles }: { initialCycles: Cycle[] }) {
                       {cycle.phase}
                     </span>
                   </div>
+                  {cycle.description && (
+                    <p className="text-sm text-gray-700 mb-3">{cycle.description}</p>
+                  )}
                   <p className="text-xs text-gray-500 mb-3">{PHASE_DESC[cycle.phase]}</p>
                   <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
                     <span>Start: <strong className="text-gray-700">{new Date(cycle.startDate).toLocaleDateString("en-ZA")}</strong></span>

@@ -54,3 +54,16 @@ The initial SQL migration is now more retry-safe:
 - the active-cycle unique index uses `IF NOT EXISTS`
 
 This reduces failures when a first migration was partially applied before Render retried startup.
+
+## Final Verification
+
+The recovery path was verified by recreating a clean Render database and deploying the BOM-free migration on 2026-08-07:
+
+```text
+Datasource "db": PostgreSQL database "pulse360_2pr8"
+Applying migration `000001_init`
+All migrations have been successfully applied.
+Database seed completed.
+Your service is live
+Available at your primary URL https://pulse360-gkt8.onrender.com
+```

@@ -36,3 +36,15 @@ For this first deployment, use a clean database:
 4. Redeploy the `pulse360` web service.
 
 If production data exists in the database, do not delete it. Instead, inspect `_prisma_migrations.logs` and use Prisma's `migrate resolve` recovery workflow.
+
+## Final Verification
+
+The BOM fix was verified in the successful Render deployment on 2026-08-07:
+
+```text
+Applying migration `000001_init`
+All migrations have been successfully applied.
+Database seed completed.
+Your service is live
+Available at your primary URL https://pulse360-gkt8.onrender.com
+```

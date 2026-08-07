@@ -68,6 +68,7 @@ CREATE TRIGGER trg_employee_updated_at
 CREATE TABLE IF NOT EXISTS review_cycle (
   id            SERIAL        PRIMARY KEY,
   name          VARCHAR(100)  NOT NULL,
+  description   TEXT,
   start_date    DATE          NOT NULL,
   end_date      DATE          NOT NULL,
   phase         cycle_phase   NOT NULL DEFAULT 'DRAFT',

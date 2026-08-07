@@ -9,10 +9,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { name, startDate, endDate, minNominees, maxNominees } = await req.json();
+  const { name, description, startDate, endDate, minNominees, maxNominees } = await req.json();
+  const trimmedDescription = typeof description === "string" ? description.trim() : "";
 
   if (!name || !startDate || !endDate) {
     return NextResponse.json({ error: "name, startDate and endDate are required" }, { status: 400 });
+  }
+  if (trimmedDescription.length > 500) {
+    return NextResponse.json({ error: "Description must be 500 characters or fewer" }, { status: 400 });
   }
   if (new Date(endDate) <= new Date(startDate)) {
     return NextResponse.json({ error: "End date must be after start date" }, { status: 400 });
@@ -32,6 +36,7 @@ export async function POST(req: Request) {
   const cycle = await prisma.reviewCycle.create({
     data: {
       name,
+      description: trimmedDescription || null,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       minNominees: minNominees ?? 3,
