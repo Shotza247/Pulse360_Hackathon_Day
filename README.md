@@ -1,7 +1,8 @@
 # Pulse360 — 360° Performance Review
 
-> **Pulse360** is a full-stack internal 360° performance review platform built for semi-annual cycles.
-> Built by the **IBM Bob** team at the Ovations Technologies Hackathon V2 — AI App Build IDE Challenge.
+> **Pulse360** is a full-stack internal 360° performance review platform built for semi-annual/quarterly/monthly cycles.
+> Built by me and the **IBM Bob** team at the Pulse Technologies Hackathon V1 — AI App Build IDE Challenge.
+> Testing AI App Build IDE tools like **IBM Bob**, **Codex**, **Cursor**, **Claude Code**.
 
 ---
 
@@ -28,11 +29,11 @@
 
 ## Overview
 
-Pulse360 replaces the original **eWay 360° Review** name with a modern product identity. It allows Ovations Technologies employees to conduct semi-annual peer performance reviews aligned to the **eWay** competency framework — covering 6 criteria (MASTERFUL, EXCELLENCE, EXECUTION, COMMITMENT, CONTRIBUTION, ADDITIONAL) across 28 questions.
+Pulse360 replaces the original **eWay 360° Review** name with a modern product identity. It allows Pulse Technologies employees to conduct semi-annual peer performance reviews aligned to the **eWay** competency framework — covering 6 criteria (MASTERFUL, EXCELLENCE, EXECUTION, COMMITMENT, CONTRIBUTION, ADDITIONAL) across 28 questions.
 
 **Three roles** — HR Administrator, Line Manager, and Employee — each see a tailored dashboard and workflow through an **8-phase review cycle**: Draft → Nominate → Approve → Review → Calculation → Consultation → Accept → Closed.
 
-All features were built using **IBM Bob**, an enterprise agentic AI platform, in a single hackathon day. Bob acted as Developer, Architect, QA Reviewer, Data Engineer, and Security Reviewer throughout the build.
+All features were built using **IBM Bob**, an enterprise agentic AI platform(Agentic SDLC Development partner), in a single hackathon day. Bob acted as Developer, Architect, QA Reviewer, Data Engineer, and Security Reviewer throughout the build. My role was to guide bob on the companies architecture, designs shift and other capabilities and feature that would make the product very useful, provide business value and create a differentiator with IBM BOB for Agentic SDLC Development by proving that it is possible to build a fully AI integrated system in a day with minimal ease saying developers the time on development and prototyping.
 
 ---
 
@@ -48,11 +49,12 @@ All features were built using **IBM Bob**, an enterprise agentic AI platform, in
 | Auth | NextAuth.js | 4.24.15 |
 | UI | Tailwind CSS | 4.x |
 | AI Text Generation | OpenAI SDK (GPT-4o) | 7.4.0 |
-| Agentic AI Platform | IBM Bob | — |
+| Agentic AI Platform | IBM Bob | 2 |
 | MCP Tooling | Model Context Protocol SDK | 1.11.4 |
 | Runtime | Node.js | 22.x |
 
 > **Note:** This project uses **Podman** (not Docker). The `docker-compose.yml` in the root is kept for reference only. The database is started with `podman run` — see [Database](#database).
+> My Docker env was running on a different machine for a BPMN agentic system build for an e-commerce client's order-processing with agentic capabilities.(projet to be released soon to the public)
 
 ---
 
@@ -60,8 +62,13 @@ All features were built using **IBM Bob**, an enterprise agentic AI platform, in
 
 | Name            | Role                                  |
 | ----------------| --------------------------------------|
-| Romeo Ndlovu    | Data Architect / Engineer / Scientist |
+| Romeo Ndlovu    | Data and AI Engineer / Platform Engineer |
 | IBM Bob         | Agentic AI Developer                  |
+
+### Want to test it out for your companies developers:
+- Link to 30 day free trial: https://bob.ibm.com/
+
+- IDC research Link (May 05, 2026): https://www-api.ibm.com/adobe/assets/urn:aaid:aem:f72132ce-a92b-43ea-8b57-f8127b773535/original/as/idc-paper-on-ibm-bob-for-agentic-sdlc-development.pdf
 
 ---
 
@@ -80,7 +87,7 @@ All features were built using **IBM Bob**, an enterprise agentic AI platform, in
 ### 1. Clone the repository
 
 ```bash
-git clone https://bitbucket.org/ovmobile/hackathon-v2-ibm.git
+git clone https://bitbucket.org/ovmobile/hackathon-v1-ibm.git
 cd hackathon-v2-ibm
 ```
 
@@ -141,7 +148,9 @@ cd pulse360
 npm run dev
 ```
 
-App is available at **http://localhost:3000**
+App is available at **http://localhost:3000** locally
+
+Deployed App is on: **https://pulse360-gkt8.onrender.com**
 
 ---
 
@@ -535,12 +544,14 @@ IBM Bob was used as the **primary development agent** throughout the hackathon, 
 
 ### Key IBM Bob capabilities demonstrated
 
-- **Multi-turn agentic reasoning** — Bob maintained context across a full day of iterative feature requests without losing architectural context
-- **Human-in-the-Loop orchestration** — Bob built HITL checkpoints into the product itself (AI suggestions require human approval before persistence)
-- **MCP tool authoring** — Bob created a custom MCP server from scratch, registered it, and wired it into the app's approval flow
-- **Text generation integration** — All four AI features use GPT-4o for text generation, with Bob writing the prompts, parsing the responses, and building the stub fallback chain
+- **Multi-turn agentic reasoning** —  Bob maintained context across a full day of iterative feature requests without losing architectural context
+- **Human-in-the-Loop orchestration** — Using Bob I built HITL checkpoints into the product itself (AI suggestions require human approval before persistence)
+- **MCP tool authoring** —  Using Bob I created a custom MCP server from scratch, registered it, and wired it into the app's approval flow (if you have a starterkit on .git use it)
+- **Text generation integration** — All four AI features use GPT-5.1 for text generation, with Bob writing the prompts, parsing the responses, and building the stub fallback chain 
 - **TypeScript discipline** — Every change validated with `tsc --noEmit` before being considered complete
 - **Parallel task execution** — Bob ran independent tasks in parallel (DB clear + API build + MCP build + page rebuild) to compress build time
+
+- **The best part is all this was done with full oversite and guidance from me through prompts and feature tunning.**
 
 ### MCP Server (`pulse360-mcp`)
 
@@ -602,4 +613,4 @@ git push origin main
 
 ---
 
-*Built with **IBM Bob** · Pulse360 · Technologies Hackathon V2 · 2025*
+*Built with **IBM Bob** · Pulse360 · Pulse Technologies Hackathon V1 · 2026*
