@@ -111,6 +111,7 @@ model Employee {
 model ReviewCycle {
   id           Int        @id @default(autoincrement())
   name         String     @db.VarChar(100)
+  description  String?
   startDate    DateTime   @map("start_date") @db.Date
   endDate      DateTime   @map("end_date")   @db.Date
   phase        CyclePhase @default(DRAFT)
