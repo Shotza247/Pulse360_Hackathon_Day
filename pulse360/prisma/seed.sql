@@ -1,4 +1,4 @@
-﻿-- =============================================================================
+-- =============================================================================
 -- Pulse360 â€” 05_seed_criteria.sql
 -- Seed the 5 performance pillars + 1 additional questions block
 -- and all 28 sub-questions (25 Ã— RATING + 2 Ã— TEXT + 1 Ã— BOOLEAN)
