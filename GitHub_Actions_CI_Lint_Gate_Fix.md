@@ -69,3 +69,29 @@ Recommended recovery:
 3. Push the lint advisory fix branch.
 4. Re-run the PR checks.
 5. Add a CodeQL/code scanning workflow later, let it pass once, then re-enable the code scanning requirement.
+
+## Required Status Check Addendum
+
+After the push succeeded and the pull request workflow passed, GitHub still showed:
+
+```text
+CI / build
+Expected - Waiting for status to be reported
+Required
+```
+
+The successful check was:
+
+```text
+CI / build (pull_request)
+```
+
+This indicates the ruleset is requiring a stale or mismatched status check name. The ruleset should require the check that is actually reported by the pull request workflow, not a pending check context that no workflow is currently publishing for the PR.
+
+Recommended recovery:
+
+1. Open the repository ruleset for `main`.
+2. Under required status checks, remove the pending `CI / build` entry.
+3. Add/select the passing pull request check, `CI / build (pull_request)`, if GitHub offers it.
+4. Save the ruleset and refresh the pull request.
+5. If GitHub only offers `CI / build`, temporarily disable required status checks, merge after manually confirming the latest pull request check is green, then re-enable the correct required check after GitHub learns the new check context.
