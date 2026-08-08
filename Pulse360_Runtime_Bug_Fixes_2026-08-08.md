@@ -16,6 +16,7 @@
 - Cycle lookups for nominations, approvals, and reviews now order by newest cycle first.
 - Line-manager approval visibility now includes both direct-report nominations and nominations where the manager is the selected reviewer.
 - Report export now creates a browser-side PDF download with executive narrative, department dashboard bars, and criteria dashboard bars.
+- The HR report preview now includes the same executive analytics dashboard context before approval, not only the AI narrative.
 - CSV export now creates a browser-side CSV download instead of writing to `C:\Users\...`.
 - Added `/profile` and `/api/profile` so users can edit first name, last name, email, and job title.
 - Removed `next/font/google` usage so production builds do not depend on fetching Google Fonts.
@@ -31,5 +32,6 @@
 - Log in as Mpho Zulu and confirm active non-HR colleagues appear in nomination search.
 - Log in as Hlanganani Oosthuizen during approval/review phases and confirm assigned pending work appears.
 - Download an HR analytics report and confirm the file is a `.pdf`.
+- Confirm the HR report preview includes score cards and analytics bar charts before approval.
 - Download a self-improvement plan and confirm the file is a `.csv`.
 - Visit My Profile and confirm basic details can be saved.

@@ -179,6 +179,97 @@ function TrendBars({ trends, criteria }: { trends: Record<number, TrendPoint[]>;
   );
 }
 
+function ReportBarList({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: { label: string; value: number | null }[];
+}) {
+  const visibleRows = rows.filter((row) => row.value !== null).slice(0, 8);
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-4">
+      <h3 className="text-xs font-bold uppercase tracking-wider text-[#0f1f3d] mb-3">{title}</h3>
+      {visibleRows.length === 0 ? (
+        <p className="text-xs text-gray-400 py-4 text-center">No report data available</p>
+      ) : (
+        <div className="space-y-3">
+          {visibleRows.map((row) => {
+            const value = row.value ?? 0;
+            const width = `${Math.max(4, Math.min(100, (value / 5) * 100))}%`;
+            return (
+              <div key={row.label}>
+                <div className="flex items-center justify-between gap-3 text-xs mb-1">
+                  <span className="font-medium text-gray-700 truncate">{row.label}</span>
+                  <span className="font-bold text-[#0f1f3d]">{value.toFixed(2)}</span>
+                </div>
+                <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="h-full rounded-full bg-[#3b82d4]" style={{ width }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ExecutiveReportPreview({
+  narrativeHtml,
+  cycleName,
+  orgOverall,
+  departments,
+  criteria,
+}: {
+  narrativeHtml: string;
+  cycleName: string;
+  orgOverall: number | null;
+  departments: { label: string; value: number | null }[];
+  criteria: { label: string; value: number | null }[];
+}) {
+  const topDepartment = [...departments]
+    .filter((row) => row.value !== null)
+    .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))[0];
+
+  return (
+    <div className="bg-gray-50">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 border-b border-gray-200">
+        <div className="rounded-xl bg-[#0f1f3d] text-white p-4">
+          <p className="text-xs text-blue-200 uppercase tracking-wider">Overall Score</p>
+          <p className="text-3xl font-black mt-1">{orgOverall !== null ? orgOverall.toFixed(2) : "-"}</p>
+          <p className="text-xs text-blue-200 mt-1">Scale 1-5</p>
+        </div>
+        <div className="rounded-xl bg-white border border-gray-200 p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Cycle</p>
+          <p className="text-sm font-bold text-gray-900 mt-2">{cycleName}</p>
+        </div>
+        <div className="rounded-xl bg-white border border-gray-200 p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Top Department</p>
+          <p className="text-sm font-bold text-gray-900 mt-2">{topDepartment?.label ?? "No data yet"}</p>
+          {topDepartment?.value !== null && topDepartment?.value !== undefined && (
+            <p className="text-xs text-green-700 font-semibold mt-1">{topDepartment.value.toFixed(2)} average</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 border-b border-gray-200">
+        <ReportBarList title="Department Score Dashboard" rows={departments} />
+        <ReportBarList title="Criteria Score Dashboard" rows={criteria} />
+      </div>
+
+      <div className="p-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#0f1f3d] mb-3">Executive Narrative</h3>
+        <div
+          className="prose prose-sm max-w-none text-sm bg-white rounded-xl border border-gray-200 p-4"
+          dangerouslySetInnerHTML={{ __html: narrativeHtml }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function AnalyticsPage() {
   const [data, setData] = useState<HeatmapData | null>(null);
@@ -488,7 +579,7 @@ export default function AnalyticsPage() {
               <div>
                 <h2 className="text-sm font-bold text-[#0f1f3d] uppercase tracking-wider">PDF Report Generator</h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  AI generates a narrative report. Review and optionally edit before saving.
+                  AI generates a narrative report with executive analytics dashboards for HR review.
                 </p>
               </div>
               {!reportHtml && (
@@ -520,7 +611,7 @@ export default function AnalyticsPage() {
                     onClick={() => { setReportApproved(true); setReportEditing(false); }}
                     className="text-xs font-semibold bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg transition"
                   >
-                    Approve & Save
+                    Approve Report
                   </button>
                   <button
                     onClick={() => { setReportHtml(null); setReportApproved(false); setReportEditing(false); }}
@@ -560,10 +651,18 @@ export default function AnalyticsPage() {
                     className="w-full h-96 font-mono text-xs p-4 focus:outline-none resize-none"
                   />
                 ) : (
-                  <div
-                    className="p-4 max-h-96 overflow-y-auto prose prose-sm max-w-none text-sm"
-                    dangerouslySetInnerHTML={{ __html: editableHtml }}
-                  />
+                  <div className="max-h-[42rem] overflow-y-auto">
+                    <ExecutiveReportPreview
+                      narrativeHtml={editableHtml}
+                      cycleName={data.cycle!.name}
+                      orgOverall={orgOverall}
+                      departments={deptOverallsSorted.map(({ dept, avg }) => ({ label: dept.name, value: avg }))}
+                      criteria={data.criteria.map((criterion) => ({
+                        label: criterion.name,
+                        value: orgAverages[criterion.id] ?? null,
+                      }))}
+                    />
+                  </div>
                 )}
               </div>
             )}
