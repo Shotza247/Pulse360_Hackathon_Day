@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
 
   const cycle = await prisma.reviewCycle.findFirst({
     where: { phase: { in: ["APPROVE", "NOMINATE"] } },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
   });
 
   if (!cycle) return NextResponse.json({ error: "No active approval cycle" }, { status: 400 });
@@ -38,8 +39,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (role === "LINE_MANAGER") {
-    // Restrict to direct reports only
-    where.employee = { managerId };
+    // Line managers can approve direct-report nominations and nominations
+    // where they are the requested reviewer.
+    where.OR = [{ employee: { managerId } }, { reviewerId: managerId }];
   }
 
   const result = await prisma.nomination.updateMany({

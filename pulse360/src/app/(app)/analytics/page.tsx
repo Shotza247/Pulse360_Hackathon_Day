@@ -1,6 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import {
+  createPulse360ReportPdf,
+  downloadBlob,
+  htmlToPlainText,
+  sanitizeFileName,
+} from "@/lib/downloads";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type CycleMeta = { id: number; name: string; phase: string; startDate: string; endDate: string };
@@ -235,21 +241,20 @@ export default function AnalyticsPage() {
   async function saveReport() {
     if (!editableHtml || !data?.cycle) return;
     setReportSaving(true);
-    const fileName = `Pulse360-Report-${data.cycle.name.replace(/\s+/g, "-")}.html`;
-    const downloadsPath = `C:\\Users\\RomeoNdlovu\\Downloads\\${fileName}`;
-    // Call MCP tool via the app's proxy endpoint
-    const res = await fetch("/api/mcp/generate-report", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        outputPath: downloadsPath,
-        htmlContent: editableHtml,
-        reportTitle: `Pulse360 Performance Report — ${data.cycle.name}`,
-      }),
+    const fileName = `${sanitizeFileName(`Pulse360-Report-${data.cycle.name}`)}.pdf`;
+    const pdf = createPulse360ReportPdf({
+      title: `Pulse360 Performance Report - ${data.cycle.name}`,
+      cycleName: data.cycle.name,
+      orgOverall,
+      narrative: htmlToPlainText(editableHtml),
+      departments: deptOverallsSorted.map(({ dept, avg }) => ({ label: dept.name, value: avg })),
+      criteria: data.criteria.map((criterion) => ({
+        label: criterion.name,
+        value: orgAverages[criterion.id] ?? null,
+      })),
     });
-    if (res.ok) {
-      setReportSaved(downloadsPath);
-    }
+    downloadBlob(pdf, fileName);
+    setReportSaved(fileName);
     setReportSaving(false);
   }
 
@@ -531,7 +536,7 @@ export default function AnalyticsPage() {
                   disabled={reportSaving}
                   className="flex items-center gap-2 text-xs font-semibold bg-[#0f1f3d] hover:bg-[#1a3160] disabled:opacity-60 text-white px-4 py-2 rounded-lg transition"
                 >
-                  {reportSaving ? "Saving…" : "Save to Downloads"}
+                  {reportSaving ? "Preparing..." : "Download PDF"}
                 </button>
               )}
             </div>
@@ -565,14 +570,14 @@ export default function AnalyticsPage() {
 
             {reportApproved && !reportSaved && (
               <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700">
-                Report approved. Click <strong>Save to Downloads</strong> to write the HTML file via the MCP tool. Open it in a browser and use Print → Save as PDF.
+                Report approved. Click <strong>Download PDF</strong> to save an executive PDF report on this device.
               </div>
             )}
 
             {reportSaved && (
               <div className="bg-[#0f1f3d] text-white rounded-lg px-4 py-3 text-sm">
-                ✅ Report saved to <code className="text-blue-200 text-xs">{reportSaved}</code>
-                <br /><span className="text-xs text-blue-200 mt-1 block">Open in a browser → File → Print → Save as PDF</span>
+                PDF download started: <code className="text-blue-200 text-xs">{reportSaved}</code>
+                <br /><span className="text-xs text-blue-200 mt-1 block">Your browser saves it to this device's configured download folder.</span>
               </div>
             )}
           </div>

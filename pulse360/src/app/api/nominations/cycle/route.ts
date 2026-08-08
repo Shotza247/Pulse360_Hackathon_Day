@@ -10,22 +10,22 @@ export async function GET() {
   const userId = Number((session.user as any).id);
   const role = (session.user as any).role as string;
 
-  const cycle = await prisma.reviewCycle.findFirst({ where: { phase: { not: "CLOSED" } } });
+  const cycle = await prisma.reviewCycle.findFirst({
+    where: { phase: { not: "CLOSED" } },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
   if (!cycle) return NextResponse.json(null);
 
-  // Compute how many same-dept peers are actually available so the UI can
-  // show the correct effective minimum for small departments
+  // Compute how many active reviewers are actually available so the UI can
+  // show the correct effective minimum for small or corrected departments.
   let effectiveMinNominees = cycle.minNominees;
   let effectiveMaxNominees = cycle.maxNominees;
   if (role !== "HR_ADMIN") {
-    const me = await prisma.employee.findUnique({ where: { id: userId }, select: { departmentId: true } });
-    if (me) {
-      const poolSize = await prisma.employee.count({
-        where: { isActive: true, id: { not: userId }, departmentId: me.departmentId },
-      });
-      effectiveMinNominees = Math.min(cycle.minNominees, poolSize);
-      effectiveMaxNominees = Math.min(cycle.maxNominees, poolSize);
-    }
+    const poolSize = await prisma.employee.count({
+      where: { isActive: true, id: { not: userId }, role: { not: "HR_ADMIN" } },
+    });
+    effectiveMinNominees = Math.min(cycle.minNominees, poolSize);
+    effectiveMaxNominees = Math.min(cycle.maxNominees, poolSize);
   }
 
   return NextResponse.json({ ...cycle, effectiveMinNominees, effectiveMaxNominees });

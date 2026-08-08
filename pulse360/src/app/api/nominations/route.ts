@@ -9,7 +9,10 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const userId = Number((session.user as any).id);
 
-  const cycle = await prisma.reviewCycle.findFirst({ where: { phase: { not: "CLOSED" } } });
+  const cycle = await prisma.reviewCycle.findFirst({
+    where: { phase: { not: "CLOSED" } },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
   if (!cycle) return NextResponse.json([]);
 
   const nominations = await prisma.nomination.findMany({
@@ -32,29 +35,29 @@ export async function POST(req: Request) {
   if (!reviewerId) return NextResponse.json({ error: "reviewerId required" }, { status: 400 });
   if (reviewerId === userId) return NextResponse.json({ error: "You cannot nominate yourself" }, { status: 400 });
 
-  const cycle = await prisma.reviewCycle.findFirst({ where: { phase: "NOMINATE" } });
+  const cycle = await prisma.reviewCycle.findFirst({
+    where: { phase: "NOMINATE" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
   if (!cycle) return NextResponse.json({ error: "No cycle open for nominations" }, { status: 400 });
 
-  // Non-HR users may only nominate peers in the same department
+  // Non-HR users may nominate any active non-HR colleague. This avoids blocking
+  // nominations when department data is corrected after accounts are seeded.
   if (role !== "HR_ADMIN") {
-    const [me, reviewer] = await Promise.all([
-      prisma.employee.findUnique({ where: { id: userId }, select: { departmentId: true } }),
-      prisma.employee.findUnique({ where: { id: reviewerId }, select: { departmentId: true } }),
-    ]);
+    const reviewer = await prisma.employee.findUnique({
+      where: { id: reviewerId },
+      select: { isActive: true, role: true },
+    });
     if (!reviewer) return NextResponse.json({ error: "Reviewer not found" }, { status: 404 });
-    if (!me || reviewer.departmentId !== me.departmentId) {
-      return NextResponse.json({ error: "Reviewers must be from your department" }, { status: 400 });
+    if (!reviewer.isActive || reviewer.role === "HR_ADMIN") {
+      return NextResponse.json({ error: "Reviewer must be an active colleague" }, { status: 400 });
     }
   }
 
   const [existing, poolSize] = await Promise.all([
     prisma.nomination.count({ where: { cycleId: cycle.id, employeeId: userId } }),
     role !== "HR_ADMIN"
-      ? prisma.employee.findUnique({ where: { id: userId }, select: { departmentId: true } }).then((me) =>
-          me
-            ? prisma.employee.count({ where: { isActive: true, id: { not: userId }, departmentId: me.departmentId } })
-            : cycle.maxNominees
-        )
+      ? prisma.employee.count({ where: { isActive: true, id: { not: userId }, role: { not: "HR_ADMIN" } } })
       : Promise.resolve(cycle.maxNominees),
   ]);
   const effectiveMax = Math.min(cycle.maxNominees, poolSize);
