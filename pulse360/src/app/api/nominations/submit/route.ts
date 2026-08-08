@@ -9,24 +9,24 @@ export async function POST() {
   const userId = Number((session.user as any).id);
   const role = (session.user as any).role as string;
 
-  const cycle = await prisma.reviewCycle.findFirst({ where: { phase: "NOMINATE" } });
+  const cycle = await prisma.reviewCycle.findFirst({
+    where: { phase: "NOMINATE" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
   if (!cycle) return NextResponse.json({ error: "No cycle open for nominations" }, { status: 400 });
 
   const nominations = await prisma.nomination.findMany({
     where: { cycleId: cycle.id, employeeId: userId },
   });
 
-  // For non-HR users, cap the minimum at however many same-department peers exist
-  // so small departments aren't blocked from submitting
+  // For non-HR users, cap the minimum at however many active reviewers exist
+  // so corrected department data or small departments do not block submission.
   let effectiveMin = cycle.minNominees;
   if (role !== "HR_ADMIN") {
-    const me = await prisma.employee.findUnique({ where: { id: userId }, select: { departmentId: true } });
-    if (me) {
-      const poolSize = await prisma.employee.count({
-        where: { isActive: true, id: { not: userId }, departmentId: me.departmentId },
-      });
-      effectiveMin = Math.min(cycle.minNominees, poolSize);
-    }
+    const poolSize = await prisma.employee.count({
+      where: { isActive: true, id: { not: userId }, role: { not: "HR_ADMIN" } },
+    });
+    effectiveMin = Math.min(cycle.minNominees, poolSize);
   }
 
   if (nominations.length < effectiveMin) {

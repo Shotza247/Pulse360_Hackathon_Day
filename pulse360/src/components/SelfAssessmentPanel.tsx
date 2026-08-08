@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { downloadTextFile, escapeCsvCell, sanitizeFileName } from "@/lib/downloads";
 
 type CriterionResult = {
   criterionId: number | null;
@@ -97,23 +98,29 @@ export function SelfAssessmentPanel({ cycleId, criterionResults, employeeName }:
     if (!plan) return;
     setSaving(true);
     const fileName = `Self-Improvement-Plan-${plan.employeeName.replace(/\s+/g, "-")}-${plan.cycleName.replace(/\s+/g, "-")}.csv`;
-    const downloadsPath = `C:\\Users\\RomeoNdlovu\\Downloads\\${fileName}`;
-    const res = await fetch("/api/mcp/write-csv", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        outputPath: downloadsPath,
-        employeeName: plan.employeeName,
-        cycleName: plan.cycleName,
-        plan: plan.plan.map((row, i) => ({
-          ...row,
-          peerScore: plan.gaps[i]?.peerScore ?? 0,
-          selfScore: plan.gaps[i]?.selfScore ?? null,
-          gap: plan.gaps[i]?.gap ?? null,
-        })),
-      }),
-    });
-    if (res.ok) setSaved(downloadsPath);
+    const safeFileName = sanitizeFileName(fileName.replace(/\.csv$/i, "")) + ".csv";
+    const header = [
+      "Employee", "Cycle", "Criterion",
+      "Peer Score", "Self Score", "Gap", "Gap Label",
+      "Weekly Action", "Monthly Goal", "Success Metric",
+    ];
+    const rows = plan.plan.map((row, i) => [
+      plan.employeeName,
+      plan.cycleName,
+      row.criterion,
+      plan.gaps[i]?.peerScore ?? 0,
+      plan.gaps[i]?.selfScore ?? "",
+      plan.gaps[i]?.gap ?? "",
+      row.gapLabel,
+      row.weeklyAction,
+      row.monthlyGoal,
+      row.successMetric,
+    ]);
+    const csv = [header, ...rows]
+      .map((row) => row.map(escapeCsvCell).join(","))
+      .join("\n");
+    downloadTextFile(csv, safeFileName, "text/csv;charset=utf-8");
+    setSaved(safeFileName);
     setSaving(false);
   }
 
@@ -288,7 +295,7 @@ export function SelfAssessmentPanel({ cycleId, criterionResults, employeeName }:
             <div className="bg-green-50 border border-green-200 rounded-xl p-4">
               <p className="text-xs font-semibold text-green-700 mb-2">Plan Approved</p>
               <p className="text-xs text-green-600 mb-3">
-                The MCP tool will write your improvement plan as a CSV file. Open it in Excel to track your daily and weekly actions.
+                Your browser will download the improvement plan as an Excel-compatible CSV file on this device.
               </p>
               <button
                 onClick={saveCsv}
@@ -302,9 +309,9 @@ export function SelfAssessmentPanel({ cycleId, criterionResults, employeeName }:
 
           {saved && (
             <div className="bg-[#0f1f3d] text-white rounded-xl p-4">
-              <p className="text-sm font-semibold mb-1">CSV saved!</p>
+              <p className="text-sm font-semibold mb-1">CSV download started!</p>
               <code className="text-blue-200 text-xs break-all">{saved}</code>
-              <p className="text-xs text-blue-300 mt-2">Open with Excel to start tracking your self-improvement schedule.</p>
+              <p className="text-xs text-blue-300 mt-2">Open it with Excel from your browser's download folder.</p>
             </div>
           )}
 

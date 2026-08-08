@@ -12,7 +12,10 @@ export async function GET(req: Request) {
   const employeeId = Number(searchParams.get("employeeId"));
   if (!employeeId) return NextResponse.json(null);
 
-  const cycle = await prisma.reviewCycle.findFirst({ where: { phase: "REVIEW" } });
+  const cycle = await prisma.reviewCycle.findFirst({
+    where: { phase: "REVIEW" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
   if (!cycle) return NextResponse.json(null);
 
   const review = await prisma.review.findUnique({

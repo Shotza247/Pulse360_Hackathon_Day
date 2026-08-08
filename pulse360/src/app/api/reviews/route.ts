@@ -15,7 +15,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Comments must be at least 20 characters" }, { status: 400 });
   }
 
-  const cycle = await prisma.reviewCycle.findFirst({ where: { phase: "REVIEW" } });
+  const cycle = await prisma.reviewCycle.findFirst({
+    where: { phase: "REVIEW" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
   if (!cycle) return NextResponse.json({ error: "No cycle in review phase" }, { status: 400 });
 
   // Verify nomination exists and is approved

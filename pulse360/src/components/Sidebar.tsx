@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 
 interface NavItem {
@@ -37,6 +37,7 @@ const NAV: NavItem[] = [
   { label: "Nominations",  href: "/nominations", roles: ["EMPLOYEE","LINE_MANAGER"],            icon: <Icon d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/> },
   { label: "My Reviews",   href: "/reviews",     roles: ["EMPLOYEE","LINE_MANAGER"],            icon: <Icon d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/> },
   { label: "My Results",   href: "/my-results",  roles: ["EMPLOYEE","LINE_MANAGER"],            icon: <Icon d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/> },
+  { label: "My Profile",   href: "/profile",     roles: ["HR_ADMIN","LINE_MANAGER","EMPLOYEE"], icon: <Icon d="M15.232 5.232l3.536 3.536M4 20h4.586a1 1 0 00.707-.293l9.475-9.475a2.5 2.5 0 10-3.536-3.536L5.757 16.172a1 1 0 00-.293.707V20z"/> },
 ];
 
 const ROLE_LABEL: Record<string, string> = {
@@ -53,6 +54,7 @@ const ROLE_COLOR: Record<string, string> = {
 
 export function Sidebar({ role, name, department, badgeCounts = {} }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const visibleNav = NAV.filter((item) => item.roles.includes(role));
 
@@ -118,7 +120,10 @@ export function Sidebar({ role, name, department, badgeCounts = {} }: SidebarPro
           {ROLE_LABEL[role] ?? role}
         </span>
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={async () => {
+            await signOut({ redirect: false });
+            router.replace("/login");
+          }}
           className="w-full flex items-center gap-2 text-blue-300 hover:text-white text-xs font-medium transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>

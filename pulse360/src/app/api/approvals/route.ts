@@ -22,14 +22,19 @@ export async function GET(req: NextRequest) {
 
   const cycle = cycleId
     ? await prisma.reviewCycle.findUnique({ where: { id: Number(cycleId) } })
-    : await prisma.reviewCycle.findFirst({ where: { phase: "APPROVE" } });
+    : await prisma.reviewCycle.findFirst({
+        where: { phase: "APPROVE" },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      });
 
   if (!cycle) return NextResponse.json([]);
 
   const where: any = {
     cycleId: cycle.id,
     ...(pendingOnly ? { approvalStatus: "PENDING" } : {}),
-    ...(role === "LINE_MANAGER" ? { employee: { managerId: userId } } : {}),
+    ...(role === "LINE_MANAGER"
+      ? { OR: [{ employee: { managerId: userId } }, { reviewerId: userId }] }
+      : {}),
   };
 
   const nominations = await prisma.nomination.findMany({

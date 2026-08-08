@@ -11,7 +11,10 @@ export default async function ReviewsPage() {
   if (!session) redirect("/login");
   const userId = Number((session.user as any).id);
 
-  const cycle = await prisma.reviewCycle.findFirst({ where: { phase: "REVIEW" } });
+  const cycle = await prisma.reviewCycle.findFirst({
+    where: { phase: "REVIEW" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
 
   const pendingReviews = cycle
     ? await prisma.nomination.findMany({
