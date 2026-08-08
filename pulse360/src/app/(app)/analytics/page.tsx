@@ -1,12 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  createPulse360ReportPdf,
-  downloadBlob,
-  htmlToPlainText,
-  sanitizeFileName,
-} from "@/lib/downloads";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type CycleMeta = { id: number; name: string; phase: string; startDate: string; endDate: string };
@@ -28,6 +22,14 @@ const PIE_COLOURS = [
   "#0f1f3d","#3b82d4","#7c5cd8","#10b981","#f59e0b",
   "#ef4444","#6366f1","#ec4899","#14b8a6","#f97316",
 ];
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 function scoreColor(score: number | null) {
   if (score === null) return "bg-gray-100 text-gray-400";
@@ -332,20 +334,131 @@ export default function AnalyticsPage() {
   async function saveReport() {
     if (!editableHtml || !data?.cycle) return;
     setReportSaving(true);
-    const fileName = `${sanitizeFileName(`Pulse360-Report-${data.cycle.name}`)}.pdf`;
-    const pdf = createPulse360ReportPdf({
-      title: `Pulse360 Performance Report - ${data.cycle.name}`,
-      cycleName: data.cycle.name,
-      orgOverall,
-      narrative: htmlToPlainText(editableHtml),
-      departments: deptOverallsSorted.map(({ dept, avg }) => ({ label: dept.name, value: avg })),
-      criteria: data.criteria.map((criterion) => ({
-        label: criterion.name,
-        value: orgAverages[criterion.id] ?? null,
-      })),
+    const departments = deptOverallsSorted.map(({ dept, avg }) => ({ label: dept.name, value: avg }));
+    const criteria = data.criteria.map((criterion) => ({
+      label: criterion.name,
+      value: orgAverages[criterion.id] ?? null,
+    }));
+    const topDepartment = [...departments]
+      .filter((row) => row.value !== null)
+      .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))[0];
+    const barRows = (rows: { label: string; value: number | null }[]) => rows
+      .filter((row) => row.value !== null)
+      .slice(0, 10)
+      .map((row) => {
+        const value = row.value ?? 0;
+        const width = Math.max(4, Math.min(100, (value / 5) * 100));
+        return `
+          <div class="bar-row">
+            <div class="bar-meta"><span>${escapeHtml(row.label)}</span><strong>${value.toFixed(2)}</strong></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
+          </div>`;
+      })
+      .join("");
+
+    const printWindow = window.open("", "_blank", "noopener,noreferrer,width=1100,height=850");
+    if (!printWindow) {
+      setReportSaving(false);
+      setReportSaved("Popup blocked. Allow popups, then try Print / Save PDF again.");
+      return;
+    }
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pulse360 Report - ${escapeHtml(data.cycle.name)}</title>
+  <style>
+    @page { size: A4; margin: 14mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f3f4f6; color: #111827; font-family: Arial, Helvetica, sans-serif; }
+    .sheet { max-width: 980px; margin: 0 auto; background: #fff; min-height: 100vh; }
+    .hero { background: #0f1f3d; color: #fff; padding: 28px 32px; }
+    .hero h1 { margin: 0; font-size: 24px; line-height: 1.2; }
+    .hero p { margin: 8px 0 0; color: #bfdbfe; font-size: 13px; }
+    .section { padding: 22px 32px; border-bottom: 1px solid #e5e7eb; }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #fff; }
+    .card.dark { background: #0f1f3d; color: #fff; border-color: #0f1f3d; }
+    .label { color: #6b7280; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+    .dark .label { color: #bfdbfe; }
+    .metric { margin-top: 8px; font-size: 30px; font-weight: 900; line-height: 1; }
+    .value { margin-top: 8px; font-size: 15px; font-weight: 800; }
+    .subtle { margin-top: 6px; color: #6b7280; font-size: 12px; }
+    .dark .subtle { color: #bfdbfe; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    h2 { margin: 0 0 14px; color: #0f1f3d; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+    .panel { border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; break-inside: avoid; }
+    .bar-row { margin-bottom: 12px; }
+    .bar-meta { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; margin-bottom: 5px; }
+    .bar-meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar-track { height: 10px; border-radius: 999px; background: #e5e7eb; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 999px; background: #3b82d4; }
+    .narrative { font-size: 13px; line-height: 1.55; }
+    .narrative h1, .narrative h2, .narrative h3 { color: #0f1f3d; text-transform: none; letter-spacing: 0; }
+    .footer { padding: 16px 32px 28px; color: #6b7280; font-size: 11px; }
+    .no-print { padding: 12px 32px; background: #ecfdf5; color: #166534; font-size: 13px; border-bottom: 1px solid #bbf7d0; }
+    @media print {
+      body { background: #fff; }
+      .sheet { max-width: none; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="sheet">
+    <div class="no-print">Use your browser print dialog and choose <strong>Save as PDF</strong>.</div>
+    <header class="hero">
+      <h1>Pulse360 Executive Performance Report</h1>
+      <p>${escapeHtml(data.cycle.name)}</p>
+    </header>
+
+    <section class="section cards">
+      <div class="card dark">
+        <div class="label">Overall Score</div>
+        <div class="metric">${orgOverall !== null ? orgOverall.toFixed(2) : "-"}</div>
+        <div class="subtle">Scale 1-5</div>
+      </div>
+      <div class="card">
+        <div class="label">Cycle</div>
+        <div class="value">${escapeHtml(data.cycle.name)}</div>
+      </div>
+      <div class="card">
+        <div class="label">Top Department</div>
+        <div class="value">${escapeHtml(topDepartment?.label ?? "No data yet")}</div>
+        <div class="subtle">${topDepartment?.value !== null && topDepartment?.value !== undefined ? `${topDepartment.value.toFixed(2)} average` : ""}</div>
+      </div>
+    </section>
+
+    <section class="section grid">
+      <div class="panel">
+        <h2>Department Score Dashboard</h2>
+        ${barRows(departments) || "<p class=\"subtle\">No department data available.</p>"}
+      </div>
+      <div class="panel">
+        <h2>Criteria Score Dashboard</h2>
+        ${barRows(criteria) || "<p class=\"subtle\">No criteria data available.</p>"}
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Executive Narrative</h2>
+      <div class="narrative">${editableHtml}</div>
+    </section>
+
+    <footer class="footer">Generated by Pulse360. Human-reviewed by HR before export.</footer>
+  </main>
+  <script>
+    window.addEventListener("load", function () {
+      setTimeout(function () { window.print(); }, 250);
     });
-    downloadBlob(pdf, fileName);
-    setReportSaved(fileName);
+  </script>
+</body>
+</html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    setReportSaved("Print dialog opened. Choose Save as PDF in your browser.");
     setReportSaving(false);
   }
 
@@ -627,7 +740,7 @@ export default function AnalyticsPage() {
                   disabled={reportSaving}
                   className="flex items-center gap-2 text-xs font-semibold bg-[#0f1f3d] hover:bg-[#1a3160] disabled:opacity-60 text-white px-4 py-2 rounded-lg transition"
                 >
-                  {reportSaving ? "Preparing..." : "Download PDF"}
+                  {reportSaving ? "Preparing..." : "Print / Save PDF"}
                 </button>
               )}
             </div>
@@ -669,14 +782,14 @@ export default function AnalyticsPage() {
 
             {reportApproved && !reportSaved && (
               <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700">
-                Report approved. Click <strong>Download PDF</strong> to save an executive PDF report on this device.
+                Report approved. Click <strong>Print / Save PDF</strong>, then choose Save as PDF in your browser.
               </div>
             )}
 
             {reportSaved && (
               <div className="bg-[#0f1f3d] text-white rounded-lg px-4 py-3 text-sm">
-                PDF download started: <code className="text-blue-200 text-xs">{reportSaved}</code>
-                <br /><span className="text-xs text-blue-200 mt-1 block">Your browser saves it to this device's configured download folder.</span>
+                <span>{reportSaved}</span>
+                <br /><span className="text-xs text-blue-200 mt-1 block">The PDF will contain the executive cards, dashboard bars, and narrative from the preview.</span>
               </div>
             )}
           </div>
