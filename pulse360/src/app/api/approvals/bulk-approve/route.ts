@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const managerId = Number((session.user as any).id);
 
   // Build where clause
-  // LINE_MANAGER: can only bulk-approve their own direct reports
+  // LINE_MANAGER: can only bulk-approve nominations for their direct reports
   // HR_ADMIN: can approve anyone
   const where: any = {
     cycleId: cycle.id,
@@ -39,9 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (role === "LINE_MANAGER") {
-    // Line managers can approve direct-report nominations and nominations
-    // where they are the requested reviewer.
-    where.OR = [{ employee: { managerId } }, { reviewerId: managerId }];
+    where.employee = { managerId };
   }
 
   const result = await prisma.nomination.updateMany({

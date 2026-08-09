@@ -3,6 +3,13 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import {
+  countDraftNominationsForEmployee,
+  countPendingApprovalsForRole,
+  countPendingReviewsForReviewer,
+  findLatestActiveCycle,
+  findLatestCycleByPhase,
+} from "@/lib/workflow-counts";
 
 export const dynamic = "force-dynamic";
 
@@ -98,7 +105,7 @@ function RingProgress({ pct, color }: { pct: number; color: string }) {
 // ─── HR Admin Dashboard ────────────────────────────────────────────────────────
 async function AdminDashboard({ userId, name }: { userId: number; name: string }) {
   const [activeCycle, totalEmployees, totalCriteria, totalManagers, recentEmployees] = await Promise.all([
-    prisma.reviewCycle.findFirst({ where: { phase: { not: "CLOSED" } }, orderBy: { createdAt: "desc" } }),
+    findLatestActiveCycle(),
     prisma.employee.count({ where: { isActive: true } }),
     prisma.pulseCriterion.count({ where: { isActive: true } }),
     prisma.employee.count({ where: { role: "LINE_MANAGER", isActive: true } }),
@@ -250,27 +257,29 @@ async function AdminDashboard({ userId, name }: { userId: number; name: string }
 
 // ─── Line Manager Dashboard ────────────────────────────────────────────────────
 async function ManagerDashboard({ userId, name }: { userId: number; name: string }) {
-  const activeCycle = await prisma.reviewCycle.findFirst({
-    where: { phase: { not: "CLOSED" } }, orderBy: { createdAt: "desc" },
-  });
+  const [activeCycle, approvalCycle, reviewCycle] = await Promise.all([
+    findLatestActiveCycle(),
+    findLatestCycleByPhase("APPROVE"),
+    findLatestCycleByPhase("REVIEW"),
+  ]);
 
   const [directReports, pendingApprovals, myPendingReviews] = await Promise.all([
     prisma.employee.findMany({
       where: { managerId: userId, isActive: true },
       select: { id: true, firstName: true, lastName: true, jobTitle: true, department: { select: { name: true } } },
     }),
-    activeCycle
-      ? prisma.nomination.count({ where: { cycleId: activeCycle.id, employee: { managerId: userId }, approvalStatus: "PENDING" } })
+    approvalCycle
+      ? countPendingApprovalsForRole(approvalCycle.id, "LINE_MANAGER", userId)
       : Promise.resolve(0),
-    activeCycle
-      ? prisma.review.count({ where: { cycleId: activeCycle.id, reviewerId: userId, status: "DRAFT" } })
+    reviewCycle
+      ? countPendingReviewsForReviewer(reviewCycle.id, userId)
       : Promise.resolve(0),
   ]);
 
-  const teamReviewStats = activeCycle
+  const teamReviewStats = reviewCycle
     ? await prisma.review.groupBy({
         by: ["status"],
-        where: { cycleId: activeCycle.id, employee: { managerId: userId } },
+        where: { cycleId: reviewCycle.id, employee: { managerId: userId } },
         _count: true,
       })
     : [];
@@ -322,7 +331,7 @@ async function ManagerDashboard({ userId, name }: { userId: number; name: string
           <div className="w-10 h-10 rounded-xl bg-purple-500 text-white flex items-center justify-center text-lg flex-shrink-0">✍️</div>
           <div className="flex-1">
             <p className="text-sm font-bold text-purple-900">{myPendingReviews} review{myPendingReviews > 1 ? "s" : ""} to complete</p>
-            <p className="text-xs text-purple-700 mt-0.5">You have draft reviews waiting to be submitted</p>
+            <p className="text-xs text-purple-700 mt-0.5">You have approved review assignments waiting to be submitted</p>
           </div>
           <span className="text-purple-400 group-hover:text-purple-600 text-xl">›</span>
         </Link>
@@ -333,7 +342,7 @@ async function ManagerDashboard({ userId, name }: { userId: number; name: string
         <MetricCard label="Direct Reports"    value={directReports.length}          sub="in your team"            accent="navy"   />
         <MetricCard label="Pending Approvals" value={pendingApprovals}              sub="nominations to action"   accent="amber"  />
         <MetricCard label="Team Reviews Done" value={`${revSubmitted}/${revTotal}`} sub={`${revPct}% complete`}   accent="green"  />
-        <MetricCard label="My Pending Reviews" value={myPendingReviews}             sub="draft reviews to submit" accent="purple" />
+        <MetricCard label="My Pending Reviews" value={myPendingReviews}             sub="review assignments to submit" accent="purple" />
       </div>
 
       {/* Team + Progress */}
@@ -403,20 +412,24 @@ async function ManagerDashboard({ userId, name }: { userId: number; name: string
 
 // ─── Employee Dashboard ────────────────────────────────────────────────────────
 async function EmployeeDashboard({ userId, name }: { userId: number; name: string }) {
-  const [activeCycle, myNominations, myPendingReviews, manager, mySubmittedReviews] = await Promise.all([
-    prisma.reviewCycle.findFirst({ where: { phase: { not: "CLOSED" } }, orderBy: { createdAt: "desc" } }),
-    prisma.nomination.count({ where: { employeeId: userId, submissionStatus: "DRAFT" } }),
-    prisma.review.count({ where: { reviewerId: userId, status: "DRAFT" } }),
+  const [activeCycle, nominateCycle, reviewCycle, manager, resultsAvailable] = await Promise.all([
+    findLatestActiveCycle(),
+    findLatestCycleByPhase("NOMINATE"),
+    findLatestCycleByPhase("REVIEW"),
     prisma.employee.findFirst({
       where: { directReports: { some: { id: userId } } },
       select: { firstName: true, lastName: true, jobTitle: true, department: { select: { name: true } } },
     }),
-    prisma.review.count({ where: { reviewerId: userId, status: "SUBMITTED" } }),
+    prisma.reviewCycle.findFirst({ where: { phase: { in: ["ACCEPT", "CLOSED"] } } }),
   ]);
 
-  const resultsAvailable = await prisma.reviewCycle.findFirst({
-    where: { phase: { in: ["ACCEPT", "CLOSED"] } },
-  });
+  const [myNominations, myPendingReviews, mySubmittedReviews] = await Promise.all([
+    nominateCycle ? countDraftNominationsForEmployee(nominateCycle.id, userId) : Promise.resolve(0),
+    reviewCycle ? countPendingReviewsForReviewer(reviewCycle.id, userId) : Promise.resolve(0),
+    reviewCycle
+      ? prisma.review.count({ where: { cycleId: reviewCycle.id, reviewerId: userId, status: "SUBMITTED" } })
+      : Promise.resolve(0),
+  ]);
 
   const totalActions = myNominations + myPendingReviews;
   const firstName = name?.split(" ")[0] ?? "there";
@@ -461,7 +474,7 @@ async function EmployeeDashboard({ userId, name }: { userId: number; name: strin
           <div className="w-10 h-10 rounded-xl bg-purple-500 text-white flex items-center justify-center text-lg flex-shrink-0">✍️</div>
           <div className="flex-1">
             <p className="text-sm font-bold text-purple-900">Complete your reviews</p>
-            <p className="text-xs text-purple-700 mt-0.5">{myPendingReviews} review form{myPendingReviews > 1 ? "s" : ""} in draft</p>
+            <p className="text-xs text-purple-700 mt-0.5">{myPendingReviews} approved review assignment{myPendingReviews > 1 ? "s" : ""} awaiting submission</p>
           </div>
           <span className="text-purple-400 group-hover:text-purple-600 text-xl">›</span>
         </Link>
