@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { personAuditSnapshot, writeAuditEvent } from "@/lib/audit";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -71,6 +72,32 @@ export async function POST(req: Request) {
         deleteMany: {},
         create: ratingData,
       },
+    },
+    include: {
+      employee: { include: { department: true } },
+      reviewer: { include: { department: true } },
+      ratings: true,
+    },
+  });
+
+  await writeAuditEvent({
+    actorId: reviewerId,
+    action: submit ? "REVIEW_SUBMITTED" : "REVIEW_DRAFT_SAVED",
+    entityType: "review",
+    entityId: review.id,
+    metadata: {
+      cycleId: cycle.id,
+      cycleName: cycle.name,
+      employee: personAuditSnapshot(review.employee),
+      reviewer: personAuditSnapshot(review.reviewer),
+      status: review.status,
+      submittedAt: review.submittedAt?.toISOString() ?? null,
+      ratingCount: review.ratings.length,
+      hasDoWellComment: Boolean(review.doWellComment),
+      hasImproveComment: Boolean(review.improveComment),
+      hasAttentionComment: Boolean(review.attentionComment),
+      wouldPickForTeam: review.wouldPickForTeam,
+      wasExistingReview: Boolean(existing),
     },
   });
 
