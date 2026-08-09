@@ -32,9 +32,7 @@ export async function GET(req: NextRequest) {
   const where: any = {
     cycleId: cycle.id,
     ...(pendingOnly ? { approvalStatus: "PENDING" } : {}),
-    ...(role === "LINE_MANAGER"
-      ? { OR: [{ employee: { managerId: userId } }, { reviewerId: userId }] }
-      : {}),
+    ...(role === "LINE_MANAGER" ? { employee: { managerId: userId } } : {}),
   };
 
   const nominations = await prisma.nomination.findMany({

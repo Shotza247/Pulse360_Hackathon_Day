@@ -14,9 +14,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (role === "LINE_MANAGER") {
     const nomination = await prisma.nomination.findUnique({
       where: { id: Number(id) },
-      select: { reviewerId: true, employee: { select: { managerId: true } } },
+      select: { employee: { select: { managerId: true } } },
     });
-    if (!nomination || (nomination.reviewerId !== userId && nomination.employee.managerId !== userId)) {
+    if (!nomination || nomination.employee.managerId !== userId) {
       return new Response(null, { status: 303, headers: { Location: "/approvals" } });
     }
   }

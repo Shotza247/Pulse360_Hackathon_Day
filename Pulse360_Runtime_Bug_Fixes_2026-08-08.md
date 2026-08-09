@@ -5,7 +5,8 @@
 - Sign out redirected users to `https://pulse.onrender.com/login`, which returned `Not Found`.
 - Nomination reviewer search was restricted by department, causing valid reviewers to be hidden when department data was wrong or too narrow.
 - Approval and review pages could disagree about active work because several APIs used non-deterministic `findFirst` cycle lookups.
-- Line managers could miss pending approval rows where they were the requested reviewer.
+- Line-manager dashboard, sidebar, and approvals page counts could disagree about pending work.
+- Line-manager approval visibility needed to follow the direct-report ownership rule, not the nominated-reviewer rule.
 - HR report export and self-improvement CSV export attempted to write files to a hard-coded server-side Windows path.
 - Users needed a self-service way to edit basic profile details.
 
@@ -14,7 +15,9 @@
 - Sign out now clears the session without external redirect handling, then routes to `/login` on the current host.
 - Non-HR nomination search now shows active non-HR colleagues, excluding the current user and already selected reviewers.
 - Cycle lookups for nominations, approvals, and reviews now order by newest cycle first.
-- Line-manager approval visibility now includes both direct-report nominations and nominations where the manager is the selected reviewer.
+- Line-manager approval visibility now includes only nominations for employees who directly report to that manager.
+- Review assignments remain reviewer-based after approval, so nominated reviewers can review every approved peer assigned to them.
+- Dashboard and sidebar badges now share the same workflow counts for pending approvals, nominations, and review assignments.
 - Report export now opens a print-ready executive report so HR can save the reviewed HTML preview as a PDF with cards, department dashboard bars, criteria dashboard bars, and narrative.
 - The HR report preview now includes the same executive analytics dashboard context before approval, not only the AI narrative.
 - CSV export now creates a browser-side CSV download instead of writing to `C:\Users\...`.
@@ -30,7 +33,9 @@
 
 - Confirm sign out from `https://pulse360-gkt8.onrender.com` lands on `https://pulse360-gkt8.onrender.com/login`.
 - Log in as Mpho Zulu and confirm active non-HR colleagues appear in nomination search.
-- Log in as Hlanganani Oosthuizen during approval/review phases and confirm assigned pending work appears.
+- Log in as Hlanganani Oosthuizen during the approval phase and confirm the dashboard, sidebar, and approvals page show the same pending direct-report nominations.
+- Log in as a nominated reviewer during the review phase and confirm all approved peer review assignments appear under My Reviews.
+- Confirm Hlanganani, Xolile, Zanele, and other line-manager dashboards match their direct-report approval queues.
 - Use Print / Save PDF on an HR analytics report and confirm the saved PDF includes the reviewed visual report content.
 - Confirm the HR report preview includes score cards and analytics bar charts before approval.
 - Download a self-improvement plan and confirm the file is a `.csv`.
