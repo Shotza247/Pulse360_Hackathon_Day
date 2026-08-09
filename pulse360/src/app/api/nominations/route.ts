@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { personAuditSnapshot, writeAuditEvent } from "@/lib/audit";
 import { NextResponse } from "next/server";
 
 // GET — my current nominations for the active cycle
@@ -73,7 +74,27 @@ export async function POST(req: Request) {
       direction: "INBOUND",
       isMandatory: false,
     },
-    include: { reviewer: { include: { department: true } } },
+    include: {
+      employee: { include: { department: true } },
+      reviewer: { include: { department: true } },
+    },
+  });
+
+  await writeAuditEvent({
+    actorId: userId,
+    action: "NOMINATION_CREATED",
+    entityType: "nomination",
+    entityId: nom.id,
+    metadata: {
+      cycleId: cycle.id,
+      cycleName: cycle.name,
+      employee: personAuditSnapshot(nom.employee),
+      reviewer: personAuditSnapshot(nom.reviewer),
+      direction: nom.direction,
+      isMandatory: nom.isMandatory,
+      approvalStatus: nom.approvalStatus,
+      submissionStatus: nom.submissionStatus,
+    },
   });
 
   return NextResponse.json(nom, { status: 201 });

@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { personAuditSnapshot, writeAuditEvent } from "@/lib/audit";
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -17,6 +18,10 @@ export async function POST() {
 
   const nominations = await prisma.nomination.findMany({
     where: { cycleId: cycle.id, employeeId: userId },
+    include: {
+      employee: { include: { department: true } },
+      reviewer: { include: { department: true } },
+    },
   });
 
   // For non-HR users, cap the minimum at however many active reviewers exist
@@ -36,6 +41,20 @@ export async function POST() {
   await prisma.nomination.updateMany({
     where: { cycleId: cycle.id, employeeId: userId },
     data: { submissionStatus: "SUBMITTED" },
+  });
+
+  await writeAuditEvent({
+    actorId: userId,
+    action: "NOMINATIONS_SUBMITTED",
+    entityType: "review_cycle",
+    entityId: cycle.id,
+    metadata: {
+      cycleId: cycle.id,
+      cycleName: cycle.name,
+      employee: nominations[0] ? personAuditSnapshot(nominations[0].employee) : { id: userId },
+      nominationCount: nominations.length,
+      reviewers: nominations.map((nomination) => personAuditSnapshot(nomination.reviewer)),
+    },
   });
 
   return NextResponse.json({ ok: true });
