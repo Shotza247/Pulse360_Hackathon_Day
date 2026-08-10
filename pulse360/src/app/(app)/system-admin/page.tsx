@@ -151,7 +151,13 @@ export default async function SystemAdminDashboard() {
   }, {});
 
   const genderCounts = employees.reduce<Record<string, number>>((acc, employee) => {
-    const label = employee.gender?.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()) ?? "Not captured";
+    const label = ({
+      WOMAN: "Female",
+      MAN: "Male",
+      NON_BINARY: "Non-binary",
+      OTHER: "Other",
+      PREFER_NOT_TO_SAY: "Prefer not to say",
+    } as Record<string, string>)[employee.gender ?? ""] ?? "Not captured";
     acc[label] = (acc[label] ?? 0) + 1;
     return acc;
   }, {});

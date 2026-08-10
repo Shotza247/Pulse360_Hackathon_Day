@@ -35,6 +35,7 @@
 - Removed `next/font/google` usage so production builds do not depend on fetching Google Fonts.
 - Added dedicated event projection tables for auth, profile updates, AI usage, AI HITL decisions, nominations, and reviews while keeping `audit_log` as the immutable governance feed.
 - Added HR-editable employee workforce fields: `employment_type`, `conversion_hire_status`, `gender`, and `ethnicity`.
+- Seeded realistic workforce and gender segments for MVP 2 dashboards: 44 permanent, 6 learnership, 3 internship, 4 contract; 33 male, 19 female, 5 other across non-system employees.
 - Updated the System Admin dashboard to read login and AI token metrics from the dedicated event tables and show aggregated gender/employment context without exposing ethnicity.
 
 ## Verification
