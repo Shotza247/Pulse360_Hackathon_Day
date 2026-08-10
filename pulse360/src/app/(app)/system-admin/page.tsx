@@ -129,6 +129,8 @@ export default async function SystemAdminDashboard() {
   const aiSuccesses = aiGenerationLogs.filter((row) => (row.metadata as any)?.status === "success").length;
   const aiStubbed = aiGenerationLogs.filter((row) => (row.metadata as any)?.stub === true).length;
   const aiTokens = aiGenerationLogs.reduce((sum, row) => sum + Number((row.metadata as any)?.totalTokens ?? 0), 0);
+  const aiInputTokens = aiGenerationLogs.reduce((sum, row) => sum + Number((row.metadata as any)?.promptTokens ?? 0), 0);
+  const aiOutputTokens = aiGenerationLogs.reduce((sum, row) => sum + Number((row.metadata as any)?.completionTokens ?? 0), 0);
   const aiAccepted = aiDecisionLogs.filter((row) => (row.metadata as any)?.decision === "accepted").length;
   const aiEdited = aiDecisionLogs.filter((row) => (row.metadata as any)?.decision === "edited").length;
   const aiDiscarded = aiDecisionLogs.filter((row) => (row.metadata as any)?.decision === "discarded").length;
@@ -319,8 +321,22 @@ export default async function SystemAdminDashboard() {
               <p className="text-2xl font-black text-amber-900">{aiStubbed}</p>
             </div>
           </div>
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-xs font-semibold text-slate-600">Input tokens</p>
+              <p className="text-2xl font-black text-slate-950">{aiInputTokens.toLocaleString("en-ZA")}</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-xs font-semibold text-slate-600">Output tokens</p>
+              <p className="text-2xl font-black text-slate-950">{aiOutputTokens.toLocaleString("en-ZA")}</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-xs font-semibold text-slate-600">Total tokens</p>
+              <p className="text-2xl font-black text-slate-950">{aiTokens.toLocaleString("en-ZA")}</p>
+            </div>
+          </div>
           <p className="mt-3 text-xs text-gray-500">
-            Total tracked tokens: <strong>{aiTokens.toLocaleString("en-ZA")}</strong>. Token counts depend on OpenAI usage metadata being returned by the model call.
+            Token counts depend on OpenAI usage metadata being returned by the model call.
           </p>
           <div className="mt-4 grid grid-cols-3 gap-3">
             <div className="rounded-lg bg-gray-50 p-3">

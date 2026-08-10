@@ -31,7 +31,7 @@
 
 Pulse360 replaces the original **eWay 360° Review** name with a modern product identity. It allows Pulse Technologies employees to conduct semi-annual peer performance reviews aligned to the **eWay** competency framework — covering 6 criteria (MASTERFUL, EXCELLENCE, EXECUTION, COMMITMENT, CONTRIBUTION, ADDITIONAL) across 28 questions.
 
-**Three roles** — HR Administrator, Line Manager, and Employee — each see a tailored dashboard and workflow through an **8-phase review cycle**: Draft → Nominate → Approve → Review → Calculation → Consultation → Accept → Closed.
+**Four roles** — System Administrator, HR Administrator, Line Manager, and Employee — each see a tailored dashboard and workflow through an **8-phase review cycle**: Draft → Nominate → Approve → Review → Calculation → Consultation → Accept → Closed. The System Administrator is a separate platform-operations persona for adoption analytics, audit metadata, AI usage, and operational health monitoring without exposing sensitive review scores or comments.
 
 All features were built using **IBM Bob**, an enterprise agentic AI platform(Agentic SDLC Development partner), in a single hackathon day. Bob acted as Developer, Architect, QA Reviewer, Data Engineer, and Security Reviewer throughout the build. My role was to guide bob on the companies architecture, designs shift and other capabilities and feature that would make the product very useful, provide business value and create a differentiator with IBM BOB for Agentic SDLC Development by proving that it is possible to build a fully AI integrated system in a day with minimal ease saying developers the time on development and prototyping.
 
@@ -187,7 +187,7 @@ Scripts are applied in order on first container start:
 | Table | Purpose |
 |---|---|
 | `department` | 10 org departments |
-| `employee` | All users — HR Admin, Line Manager, Employee |
+| `employee` | All users — System Admin, HR Admin, Line Manager, Employee |
 | `review_cycle` | Semi-annual review cycles (8-phase lifecycle) |
 | `pulse_criterion` | The 6 eWay competency pillars |
 | `pulse_question` | 28 individual sub-questions (RATING / TEXT / BOOLEAN) |
@@ -458,7 +458,7 @@ DRAFT → NOMINATE → APPROVE → REVIEW → CALCULATION → CONSULTATION → A
 
 | Category                | Features                                                                             |
 | -------------------------| --------------------------------------------------------------------------------------|
-| **Auth & RBAC**         | Email + bcrypt login, JWT sessions, role-based route guards, 3 roles                 |
+| **Auth & RBAC**         | Email + bcrypt login, JWT sessions, role-based route guards, 4 roles                 |
 | **Employee Management** | Add, edit, deactivate, set manager, 57 seeded employees, 10 departments              |
 | **Review Cycles**       | Create, 8-phase advance, phase stepper UI, one active cycle enforced                 |
 | **Nominations**         | Inbound/outbound peer selection, manager auto-locked, draft + submit, min/max limits |
@@ -483,7 +483,7 @@ DRAFT → NOMINATE → APPROVE → REVIEW → CALCULATION → CONSULTATION → A
 | **In-App Notification Bell**                 | ✅ Done          | Bell icon in top bar; role-scoped notifications on every phase transition; red unread badge; mark-read per item or bulk; 30 s auto-poll |
 | Mobile Responsive UI                         | ✅ Done          | Tested and confirmed — layout adjusts across all screen sizes                                          |
 | Calibration View                             | ⬜ Not built     | Department heatmap partially fulfils this requirement                                                  |
-| Audit Trail UI                               | ⬜ Schema exists | `audit_log` table in use (stores notifications + reads); dedicated UI not built                        |
+| **System Admin Audit Trail & Platform Dashboard** | ✅ Done          | Custom `SYSTEM_ADMIN` role and UI for platform adoption, audit metadata, AI usage, HITL decisions, approval health, and anonymized behavioral analytics |
 
 ### ✨ Custom / Beyond-Spec Features
 
@@ -497,6 +497,8 @@ DRAFT → NOMINATE → APPROVE → REVIEW → CALCULATION → CONSULTATION → A
 | **Pie Chart Visualisation** | Pure SVG (no external charting lib) showing each department's share of the org-wide average score. |
 | **Bulk Approve Nominations** | HR Admin can approve all pending nominations with one click (per employee or all at once). |
 | **CSV Export via MCP** | Approved improvement plan written as Excel-compatible CSV via the `write_csv` MCP tool — human must click Approve first. |
+| **System Admin Platform Analytics** | Dedicated System Admin experience for adoption, login activity, nomination/review completion, approval bottlenecks, anonymized behavioral network patterns, AI token metadata, and AI accept/edit/discard decisions. |
+| **Audit Trail Events** | Captures key operational events such as logins, profile updates, nomination actions, approval/rejection decisions, review submissions, AI generation calls, and human-in-the-loop AI decisions. |
 
 ---
 
