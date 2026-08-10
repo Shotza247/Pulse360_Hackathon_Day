@@ -6,6 +6,7 @@ const ROLE_PATHS: Record<string, string[]> = {
   HR_ADMIN:     ["/dashboard", "/admin", "/employees", "/cycles", "/results", "/criteria", "/nominations", "/reviews", "/my-results", "/approvals"],
   LINE_MANAGER: ["/dashboard", "/manager", "/approvals", "/results", "/nominations", "/reviews", "/my-results"],
   EMPLOYEE:     ["/dashboard", "/nominations", "/reviews", "/my-results"],
+  SYSTEM_ADMIN: ["/dashboard", "/system-admin", "/profile"],
 };
 
 export async function proxy(req: NextRequest) {
@@ -46,6 +47,7 @@ export const config = {
     "/results/:path*",
     "/criteria/:path*",
     "/manager/:path*",
+    "/system-admin/:path*",
     "/approvals/:path*",
     "/nominations/:path*",
     "/reviews/:path*",

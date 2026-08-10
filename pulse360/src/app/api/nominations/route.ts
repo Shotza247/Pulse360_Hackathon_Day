@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       select: { isActive: true, role: true },
     });
     if (!reviewer) return NextResponse.json({ error: "Reviewer not found" }, { status: 404 });
-    if (!reviewer.isActive || reviewer.role === "HR_ADMIN") {
+    if (!reviewer.isActive || ["HR_ADMIN", "SYSTEM_ADMIN"].includes(reviewer.role)) {
       return NextResponse.json({ error: "Reviewer must be an active colleague" }, { status: 400 });
     }
   }
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
   const [existing, poolSize] = await Promise.all([
     prisma.nomination.count({ where: { cycleId: cycle.id, employeeId: userId } }),
     role !== "HR_ADMIN"
-      ? prisma.employee.count({ where: { isActive: true, id: { not: userId }, role: { not: "HR_ADMIN" } } })
+      ? prisma.employee.count({ where: { isActive: true, id: { not: userId }, role: { notIn: ["HR_ADMIN", "SYSTEM_ADMIN"] } } })
       : Promise.resolve(cycle.maxNominees),
   ]);
   const effectiveMax = Math.min(cycle.maxNominees, poolSize);

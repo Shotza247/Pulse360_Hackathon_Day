@@ -26,6 +26,7 @@ export default async function EmployeesPage({
     prisma.employee.findMany({
       where: {
         isActive: true,
+        role: { not: "SYSTEM_ADMIN" },
         ...(q ? { OR: [
           { firstName: { contains: q, mode: "insensitive" } },
           { lastName:  { contains: q, mode: "insensitive" } },
@@ -40,7 +41,7 @@ export default async function EmployeesPage({
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.employee.count({ where: { isActive: true } }),
+    prisma.employee.count({ where: { isActive: true, role: { not: "SYSTEM_ADMIN" } } }),
     prisma.department.findMany({ orderBy: { name: "asc" } }),
   ]);
 

@@ -109,6 +109,7 @@ INSERT INTO department (name) VALUES
   ('Marketing'),
   ('IT'),
   ('People'),
+  ('Platform Operations'),
   ('Facilities'),
   ('Talent Sourcing'),
   ('Sell'),
@@ -143,6 +144,7 @@ SELECT
   TRUE
 FROM (VALUES
 --  emp_key  first_name    last_name        email                                  job_title                                         job_grade                 dept_name                    role
+  ('SYS001', 'PULSE360',  'SYSTEM ADMIN',  'system.admin@techcorp.co.za',         'Platform Systems Administrator',                 'OPS - Platform Admin',   'Platform Operations',       'SYSTEM_ADMIN'),
   ('670',  'FANUS',      'DAVIDS',        'fanus.davids@techcorp.co.za',         'Principal Consultant',                           'PRN - Principal Consu',  'Delivery & Technology',     'EMPLOYEE'),
   ('758',  'NTOKOZO',    'MOKOENA',       'ntokozo.mokoena@techcorp.co.za',      'Junior Developer',                               'JNR - Junior Consulta',  'Default',                   'EMPLOYEE'),
   ('673',  'IVAN',       'VAN ROOYEN',    'ivan.vanrooye@techcorp.co.za',        'Senior System Engineer',                         'SNR - Senior Consulta',  'Delivery & Technology',     'EMPLOYEE'),
@@ -293,3 +295,9 @@ WHERE role = 'LINE_MANAGER';
 UPDATE employee
 SET password_hash = '$2b$12$TDrH/68VWmOvdFGMf70oRun4mYCSXmTVttjxq6gF8JaLqXIGwOxzq'
 WHERE role = 'EMPLOYEE';
+
+-- System Admin
+-- Temporary password: Pulse360!System
+UPDATE employee
+SET password_hash = '$2b$12$1anioRmrnMklJhlTh.TfBOMN2Rp1l6SN2BdsZS2xg16c8ph0p7rQe'
+WHERE role = 'SYSTEM_ADMIN';

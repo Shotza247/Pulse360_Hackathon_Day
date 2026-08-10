@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
+const HR_MANAGED_ROLES = ["EMPLOYEE", "LINE_MANAGER", "HR_ADMIN"];
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session || (session.user as any).role !== "HR_ADMIN") {
@@ -14,11 +16,15 @@ export async function POST(req: Request) {
   if (!firstName || !lastName || !email || !departmentId) {
     return NextResponse.json({ error: "firstName, lastName, email and departmentId are required" }, { status: 400 });
   }
+  const employeeRole = role ?? "EMPLOYEE";
+  if (!HR_MANAGED_ROLES.includes(employeeRole)) {
+    return NextResponse.json({ error: "This role cannot be managed from HR employee screens" }, { status: 400 });
+  }
 
   const passwordHash = await bcrypt.hash("Pulse360!Employee", 12);
 
   const employee = await prisma.employee.create({
-    data: { firstName, lastName, email: email.toLowerCase(), jobTitle, role: role ?? "EMPLOYEE", departmentId, managerId: managerId ?? null, isActive: isActive ?? true, passwordHash },
+    data: { firstName, lastName, email: email.toLowerCase(), jobTitle, role: employeeRole, departmentId, managerId: managerId ?? null, isActive: isActive ?? true, passwordHash },
   });
 
   return NextResponse.json(employee, { status: 201 });
@@ -41,8 +47,8 @@ export async function GET(req: Request) {
         { firstName: { contains: search, mode: "insensitive" as const } },
         { lastName: { contains: search, mode: "insensitive" as const } },
         { email: { contains: search, mode: "insensitive" as const } },
-      ]}
-    : {};
+      ], role: { not: "SYSTEM_ADMIN" as const } }
+    : { role: { not: "SYSTEM_ADMIN" as const } };
 
   const [employees, total] = await Promise.all([
     prisma.employee.findMany({ where, skip, take, include: { department: true }, orderBy: { lastName: "asc" } }),

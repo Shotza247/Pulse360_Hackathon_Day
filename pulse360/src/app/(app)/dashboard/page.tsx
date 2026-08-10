@@ -18,6 +18,7 @@ export default async function DashboardPage() {
   if (!session) redirect("/login");
   const user = session.user as any;
   const role = user.role as string;
+  if (role === "SYSTEM_ADMIN") redirect("/system-admin");
   if (role === "HR_ADMIN")     return <AdminDashboard userId={Number(user.id)} name={user.name} />;
   if (role === "LINE_MANAGER") return <ManagerDashboard userId={Number(user.id)} name={user.name} />;
   return <EmployeeDashboard userId={Number(user.id)} name={user.name} />;

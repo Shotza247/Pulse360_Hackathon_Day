@@ -128,12 +128,27 @@ export default function ReviewFormPage({ params }: { params: Promise<{ employeeI
     setDoWell(aiSuggestion.doWell);
     setImprove(aiSuggestion.improve);
     setAiDecision("accepted");
+    logAiDecision("accepted");
   }
 
   function discardSuggestion() {
     setAiSuggestion(null);
     setAiStatus("idle");
     setAiDecision("discarded");
+    logAiDecision("discarded");
+  }
+
+  function logAiDecision(decision: "accepted" | "edited" | "discarded") {
+    fetch("/api/ai/decision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        feature: "suggest_comments",
+        decision,
+        employeeId,
+        stub: aiSuggestion?.stub ?? false,
+      }),
+    }).catch(() => {});
   }
 
   const allRatingQuestionsAnswered = ratingCriteria.every((c) =>
@@ -252,7 +267,7 @@ export default function ReviewFormPage({ params }: { params: Promise<{ employeeI
                   className="flex-1 rounded-lg bg-purple-600 text-white text-xs font-semibold py-2 hover:bg-purple-700 transition">
                   ✓ Accept
                 </button>
-                <button onClick={() => { acceptSuggestion(); setAiDecision("edited"); }}
+                <button onClick={() => { if (aiSuggestion) { setDoWell(aiSuggestion.doWell); setImprove(aiSuggestion.improve); } setAiDecision("edited"); logAiDecision("edited"); }}
                   className="flex-1 rounded-lg border border-purple-300 text-purple-700 text-xs font-semibold py-2 hover:bg-purple-50 transition">
                   ✏ Accept & Edit
                 </button>

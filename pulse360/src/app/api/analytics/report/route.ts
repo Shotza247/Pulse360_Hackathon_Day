@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { writeAuditEvent } from "@/lib/audit";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
@@ -88,6 +89,20 @@ ${criteria.map((c) => `<th style="text-align:center;padding:8px 10px">${c.name}<
   }
 
   if (!apiKey || deptSummaries.length === 0) {
+    await writeAuditEvent({
+      actorId: Number((session.user as any).id),
+      action: "AI_ANALYTICS_REPORT",
+      entityType: "ai_interaction",
+      entityId: Number(cycleId),
+      metadata: {
+        feature: "analytics_report",
+        cycleId: Number(cycleId),
+        status: "success",
+        stub: !apiKey,
+        departmentCount: deptSummaries.length,
+        totalTokens: 0,
+      },
+    }).catch(() => {});
     return NextResponse.json({ html: stubReport(), stub: !apiKey });
   }
 
@@ -115,9 +130,33 @@ Style: professional, concise, data-driven. Use inline CSS only. Colour palette: 
       max_completion_tokens: 1800,
     });
     const html = completion.choices[0]?.message?.content ?? stubReport();
+    await writeAuditEvent({
+      actorId: Number((session.user as any).id),
+      action: "AI_ANALYTICS_REPORT",
+      entityType: "ai_interaction",
+      entityId: Number(cycleId),
+      metadata: {
+        feature: "analytics_report",
+        cycleId: Number(cycleId),
+        status: "success",
+        stub: false,
+        model: "gpt-4o",
+        departmentCount: deptSummaries.length,
+        totalTokens: completion.usage?.total_tokens ?? 0,
+        promptTokens: completion.usage?.prompt_tokens ?? 0,
+        completionTokens: completion.usage?.completion_tokens ?? 0,
+      },
+    }).catch(() => {});
     return NextResponse.json({ html, stub: false });
   } catch (err) {
     console.error("OpenAI report error:", err);
+    await writeAuditEvent({
+      actorId: Number((session.user as any).id),
+      action: "AI_ANALYTICS_REPORT",
+      entityType: "ai_interaction",
+      entityId: Number(cycleId),
+      metadata: { feature: "analytics_report", cycleId: Number(cycleId), status: "error", stub: false, totalTokens: 0 },
+    }).catch(() => {});
     return NextResponse.json({ html: stubReport(), stub: true });
   }
 }
