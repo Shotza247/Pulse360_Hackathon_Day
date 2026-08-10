@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { writeAuditEvent } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
@@ -9,6 +10,7 @@ import OpenAI from "openai";
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const actorId = Number((session.user as any).id);
 
   const { employeeId, cycleId } = await req.json();
   if (!employeeId || !cycleId) {
@@ -41,7 +43,17 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.OPENAI_API_KEY?.trim().replace(/\s+/g, "");
 
-  function stubResponse() {
+  function stubResponse(logEvent = true) {
+    if (logEvent) {
+      writeAuditEvent({
+        actorId,
+        action: "AI_THEME_SUMMARY",
+        entityType: "ai_interaction",
+        entityId: Number(employeeId),
+        metadata: { feature: "theme_summary", cycleId: Number(cycleId), status: "success", stub: true, totalTokens: 0 },
+      }).catch(() => {});
+    }
+
     return NextResponse.json({
       strengths: [
         "Demonstrates consistent commitment and reliability across assignments",
@@ -90,6 +102,22 @@ Respond ONLY with valid JSON in this exact format:
 
     const content = completion.choices[0]?.message?.content ?? "{}";
     const parsed = JSON.parse(content);
+    await writeAuditEvent({
+      actorId,
+      action: "AI_THEME_SUMMARY",
+      entityType: "ai_interaction",
+      entityId: Number(employeeId),
+      metadata: {
+        feature: "theme_summary",
+        cycleId: Number(cycleId),
+        status: "success",
+        stub: false,
+        model: "gpt-4o",
+        totalTokens: completion.usage?.total_tokens ?? 0,
+        promptTokens: completion.usage?.prompt_tokens ?? 0,
+        completionTokens: completion.usage?.completion_tokens ?? 0,
+      },
+    }).catch(() => {});
 
     return NextResponse.json({
       strengths: parsed.strengths ?? [],
@@ -98,6 +126,13 @@ Respond ONLY with valid JSON in this exact format:
     });
   } catch (err) {
     console.error("OpenAI theme-summary error:", err);
-    return stubResponse();
+    await writeAuditEvent({
+      actorId,
+      action: "AI_THEME_SUMMARY",
+      entityType: "ai_interaction",
+      entityId: Number(employeeId),
+      metadata: { feature: "theme_summary", cycleId: Number(cycleId), status: "error", stub: false, totalTokens: 0 },
+    }).catch(() => {});
+    return stubResponse(false);
   }
 }

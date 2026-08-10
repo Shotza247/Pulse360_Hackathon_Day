@@ -13,8 +13,8 @@ export async function GET() {
   // HR_ADMIN sees everyone; other roles see all active non-HR colleagues so
   // corrected department assignments do not hide valid reviewers.
   const where: object = role === "HR_ADMIN"
-    ? { isActive: true, id: { not: userId } }
-    : { isActive: true, id: { not: userId }, role: { not: "HR_ADMIN" } };
+    ? { isActive: true, id: { not: userId }, role: { not: "SYSTEM_ADMIN" } }
+    : { isActive: true, id: { not: userId }, role: { notIn: ["HR_ADMIN", "SYSTEM_ADMIN"] } };
 
   const employees = await prisma.employee.findMany({
     where,

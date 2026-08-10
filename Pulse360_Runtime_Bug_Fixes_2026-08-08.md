@@ -8,6 +8,7 @@
 - Line-manager dashboard, sidebar, and approvals page counts could disagree about pending work.
 - Line-manager approval visibility needed to follow the direct-report ownership rule, not the nominated-reviewer rule.
 - HR admins needed an audit trail for nomination, approval, rejection, and review transactions.
+- MVP 2 needs a separate System Admin persona for platform adoption, audit, AI usage, and behavioral metadata monitoring without exposing review scores/comments.
 - HR report export and self-improvement CSV export attempted to write files to a hard-coded server-side Windows path.
 - Users needed a self-service way to edit basic profile details.
 
@@ -20,7 +21,11 @@
 - Review assignments remain reviewer-based after approval, so nominated reviewers can review every approved peer assigned to them.
 - Dashboard and sidebar badges now share the same workflow counts for pending approvals, nominations, and review assignments.
 - Added structured audit events for nomination creation, removal, submission, approval, rejection, bulk approval, review draft saves, and review submissions.
-- Added an HR-only System Audit dashboard at `/admin/audit` showing current-cycle totals, who nominated who, most-nominated reviewers, department nomination flow, review activity, and recent transaction logs.
+- Retired the earlier HR-only `/admin/audit` detail view so platform monitoring sits with the new System Admin persona instead.
+- Added a separate `SYSTEM_ADMIN` role with a seeded Platform Operations account.
+- Moved platform audit analytics into a privacy-preserving `/system-admin` dashboard and retired the old HR audit page into a redirect.
+- Added audit tracking for login success/failure, profile updates, AI generation calls, AI token metadata, and review AI human-in-the-loop choices.
+- Excluded System Admin accounts from HR-managed employee lists and nomination reviewer pools.
 - Report export now opens a print-ready executive report so HR can save the reviewed HTML preview as a PDF with cards, department dashboard bars, criteria dashboard bars, and narrative.
 - The HR report preview now includes the same executive analytics dashboard context before approval, not only the AI narrative.
 - CSV export now creates a browser-side CSV download instead of writing to `C:\Users\...`.
@@ -40,6 +45,8 @@
 - Log in as a nominated reviewer during the review phase and confirm all approved peer review assignments appear under My Reviews.
 - Confirm Hlanganani, Xolile, Zanele, and other line-manager dashboards match their direct-report approval queues.
 - Visit `/admin/audit` as HR Admin and confirm new nomination, approval, rejection, and review activity appears with actor, employee, reviewer, and department context.
+- Log in as `system.admin@techcorp.co.za` with the temporary password and confirm `/system-admin` opens with aggregated adoption, approval health, behavioral network, AI usage, and governance-event panels.
+- Confirm HR Admin can no longer access a detailed `/admin/audit` relationship table and that System Admin does not see review scores or review comments.
 - Use Print / Save PDF on an HR analytics report and confirm the saved PDF includes the reviewed visual report content.
 - Confirm the HR report preview includes score cards and analytics bar charts before approval.
 - Download a self-improvement plan and confirm the file is a `.csv`.

@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { writeAuditEvent } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
@@ -55,7 +56,17 @@ export async function POST(req: NextRequest) {
   const empName = `${employee!.firstName} ${employee!.lastName}`;
   const empTitle = employee!.jobTitle ?? "employee";
 
-  function stubPlan() {
+  function stubPlan(logEvent = true) {
+    if (logEvent) {
+      writeAuditEvent({
+        actorId: userId,
+        action: "AI_IMPROVEMENT_PLAN",
+        entityType: "ai_interaction",
+        entityId: userId,
+        metadata: { feature: "improvement_plan", cycleId: Number(cycleId), status: "success", stub: true, totalTokens: 0 },
+      }).catch(() => {});
+    }
+
     const plan = gaps.map((g) => ({
       criterion: g.criterion,
       peerScore: g.peerScore,
@@ -121,6 +132,23 @@ Respond ONLY with valid JSON:
     });
     const parsed = JSON.parse(completion.choices[0]?.message?.content ?? "{}");
     const cycle = await prisma.reviewCycle.findUnique({ where: { id: Number(cycleId) }, select: { name: true } });
+    await writeAuditEvent({
+      actorId: userId,
+      action: "AI_IMPROVEMENT_PLAN",
+      entityType: "ai_interaction",
+      entityId: userId,
+      metadata: {
+        feature: "improvement_plan",
+        cycleId: Number(cycleId),
+        status: "success",
+        stub: false,
+        model: "gpt-5.1",
+        totalTokens: completion.usage?.total_tokens ?? 0,
+        promptTokens: completion.usage?.prompt_tokens ?? 0,
+        completionTokens: completion.usage?.completion_tokens ?? 0,
+      },
+    }).catch(() => {});
+
     return NextResponse.json({
       employeeName: `${employee.firstName} ${employee.lastName}`,
       cycleName: cycle?.name ?? "",
@@ -131,6 +159,13 @@ Respond ONLY with valid JSON:
     });
   } catch (err) {
     console.error("OpenAI improvement-plan error:", err);
-    return stubPlan();
+    await writeAuditEvent({
+      actorId: userId,
+      action: "AI_IMPROVEMENT_PLAN",
+      entityType: "ai_interaction",
+      entityId: userId,
+      metadata: { feature: "improvement_plan", cycleId: Number(cycleId), status: "error", stub: false, totalTokens: 0 },
+    }).catch(() => {});
+    return stubPlan(false);
   }
 }

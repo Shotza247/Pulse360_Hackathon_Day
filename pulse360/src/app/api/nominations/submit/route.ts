@@ -29,7 +29,7 @@ export async function POST() {
   let effectiveMin = cycle.minNominees;
   if (role !== "HR_ADMIN") {
     const poolSize = await prisma.employee.count({
-      where: { isActive: true, id: { not: userId }, role: { not: "HR_ADMIN" } },
+      where: { isActive: true, id: { not: userId }, role: { notIn: ["HR_ADMIN", "SYSTEM_ADMIN"] } },
     });
     effectiveMin = Math.min(cycle.minNominees, poolSize);
   }

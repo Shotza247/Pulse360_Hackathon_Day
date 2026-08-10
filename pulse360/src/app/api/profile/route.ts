@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { writeAuditEvent } from "@/lib/audit";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -47,6 +48,11 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Email is already used by another employee" }, { status: 409 });
   }
 
+  const before = await prisma.employee.findUnique({
+    where: { id: userId },
+    select: { firstName: true, lastName: true, email: true, jobTitle: true },
+  });
+
   const employee = await prisma.employee.update({
     where: { id: userId },
     data: {
@@ -65,6 +71,23 @@ export async function PUT(req: Request) {
       role: true,
       department: { select: { name: true } },
       manager: { select: { firstName: true, lastName: true } },
+    },
+  });
+
+  await writeAuditEvent({
+    actorId: userId,
+    action: "PROFILE_UPDATED",
+    entityType: "employee",
+    entityId: userId,
+    metadata: {
+      changedFields: {
+        firstName: before?.firstName !== employee.firstName,
+        lastName: before?.lastName !== employee.lastName,
+        email: before?.email !== employee.email,
+        jobTitle: before?.jobTitle !== employee.jobTitle,
+      },
+      role: employee.role,
+      department: employee.department.name,
     },
   });
 

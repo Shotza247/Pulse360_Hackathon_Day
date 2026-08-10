@@ -9,6 +9,7 @@ datasource db {
 // ── Enums ────────────────────────────────────────────────────────────────────
 
 enum EmployeeRole {
+  SYSTEM_ADMIN
   HR_ADMIN
   LINE_MANAGER
   EMPLOYEE

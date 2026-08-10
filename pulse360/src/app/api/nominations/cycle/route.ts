@@ -22,7 +22,7 @@ export async function GET() {
   let effectiveMaxNominees = cycle.maxNominees;
   if (role !== "HR_ADMIN") {
     const poolSize = await prisma.employee.count({
-      where: { isActive: true, id: { not: userId }, role: { not: "HR_ADMIN" } },
+      where: { isActive: true, id: { not: userId }, role: { notIn: ["HR_ADMIN", "SYSTEM_ADMIN"] } },
     });
     effectiveMinNominees = Math.min(cycle.minNominees, poolSize);
     effectiveMaxNominees = Math.min(cycle.maxNominees, poolSize);
