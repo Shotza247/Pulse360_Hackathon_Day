@@ -109,7 +109,6 @@ INSERT INTO department (name) VALUES
   ('Marketing'),
   ('IT'),
   ('People'),
-  ('Platform Operations'),
   ('Facilities'),
   ('Talent Sourcing'),
   ('Sell'),
@@ -144,7 +143,7 @@ SELECT
   TRUE
 FROM (VALUES
 --  emp_key  first_name    last_name        email                                  job_title                                         job_grade                 dept_name                    role
-  ('SYS001', 'PULSE360',  'SYSTEM ADMIN',  'system.admin@techcorp.co.za',         'Platform Systems Administrator',                 'OPS - Platform Admin',   'Platform Operations',       'SYSTEM_ADMIN'),
+  ('SYS001', 'PULSE360',  'SYSTEM ADMIN',  'system.admin@techcorp.co.za',         'Platform Systems Administrator',                 'OPS - Platform Admin',   'IT',                        'SYSTEM_ADMIN'),
   ('670',  'FANUS',      'DAVIDS',        'fanus.davids@techcorp.co.za',         'Principal Consultant',                           'PRN - Principal Consu',  'Delivery & Technology',     'EMPLOYEE'),
   ('758',  'NTOKOZO',    'MOKOENA',       'ntokozo.mokoena@techcorp.co.za',      'Junior Developer',                               'JNR - Junior Consulta',  'Default',                   'EMPLOYEE'),
   ('673',  'IVAN',       'VAN ROOYEN',    'ivan.vanrooye@techcorp.co.za',        'Senior System Engineer',                         'SNR - Senior Consulta',  'Delivery & Technology',     'EMPLOYEE'),
