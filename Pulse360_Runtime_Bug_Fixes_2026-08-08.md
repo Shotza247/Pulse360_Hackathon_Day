@@ -11,6 +11,8 @@
 - MVP 2 needs a separate System Admin persona for platform adoption, audit, AI usage, and behavioral metadata monitoring without exposing review scores/comments.
 - HR report export and self-improvement CSV export attempted to write files to a hard-coded server-side Windows path.
 - Users needed a self-service way to edit basic profile details.
+- MVP 2 analytics needed cleaner event tables instead of storing every downstream metric only in `audit_log`.
+- HR needed editable workforce dimensions for job grade, employment type, conversion-hire status, gender, and ethnicity.
 
 ## Fixes Applied
 
@@ -31,6 +33,9 @@
 - CSV export now creates a browser-side CSV download instead of writing to `C:\Users\...`.
 - Added `/profile` and `/api/profile` so users can edit first name, last name, email, and job title.
 - Removed `next/font/google` usage so production builds do not depend on fetching Google Fonts.
+- Added dedicated event projection tables for auth, profile updates, AI usage, AI HITL decisions, nominations, and reviews while keeping `audit_log` as the immutable governance feed.
+- Added HR-editable employee workforce fields: `employment_type`, `conversion_hire_status`, `gender`, and `ethnicity`.
+- Updated the System Admin dashboard to read login and AI token metrics from the dedicated event tables and show aggregated gender/employment context without exposing ethnicity.
 
 ## Verification
 
@@ -51,3 +56,5 @@
 - Confirm the HR report preview includes score cards and analytics bar charts before approval.
 - Download a self-improvement plan and confirm the file is a `.csv`.
 - Visit My Profile and confirm basic details can be saved.
+- As HR Admin, create or edit an employee and confirm job grade, employment type, conversion-hire status, gender, and ethnicity persist.
+- As System Admin, confirm adoption, AI token, gender, and employment mix cards update without showing employee-level ethnicity.

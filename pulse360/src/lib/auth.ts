@@ -46,7 +46,7 @@ export const authOptions: NextAuthOptions = {
             action: "LOGIN_FAILED",
             entityType: "auth",
             entityId: employee.id,
-            metadata: { email: employee.email, reason: "invalid_password", role: employee.role },
+          metadata: { email: employee.email, reason: "invalid_password", role: employee.role },
           }).catch(() => {});
           return null;
         }
@@ -57,7 +57,9 @@ export const authOptions: NextAuthOptions = {
           entityType: "auth",
           entityId: employee.id,
           metadata: {
+            email: employee.email,
             role: employee.role,
+            departmentId: employee.departmentId,
             department: employee.department.name,
           },
         }).catch(() => {});

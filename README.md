@@ -182,7 +182,7 @@ Scripts are applied in order on first container start:
 | `07_seed_employees.sql` | 57 synthetic employees with manager relationships |
 | `08_add_password_hash.sql` | bcrypt password hashes for all 57 employees |
 
-### Data Model (11 tables)
+### Data Model (17 tables)
 
 | Table | Purpose |
 |---|---|
@@ -196,7 +196,15 @@ Scripts are applied in order on first container start:
 | `review` | Submitted reviews per reviewer per subject |
 | `review_rating` | Individual question answers (score or text) |
 | `review_result` | Computed aggregates written at CALCULATION phase |
-| `audit_log` | Append-only event log |
+| `audit_log` | Append-only raw governance event log |
+| `auth_event` | Login success/failure projection for adoption and access monitoring |
+| `profile_event` | Profile update projection showing which fields changed without exposing old/new values |
+| `ai_usage_event` | AI feature usage, status, model, and token metadata |
+| `ai_hitl_decision` | Human-in-the-loop accept/edit/discard decisions for AI-generated content |
+| `nomination_event` | Nomination lifecycle events with employee/reviewer and department snapshots |
+| `review_event` | Review draft/submission metadata without review comments or scores |
+
+The `employee` table now also carries HR-managed workforce dimensions: job grade, employment type, conversion-hire status, gender, and ethnicity. System Admin analytics read from dedicated event tables and aggregated workforce dimensions. Ethnicity is intentionally kept for HR demographic reporting and is not displayed on the System Admin dashboard.
 
 ### Verify the database
 

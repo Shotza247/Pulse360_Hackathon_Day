@@ -79,10 +79,10 @@ export default async function SystemAdminDashboard() {
   });
   const cycleWhere = cycle ? { cycleId: cycle.id } : {};
 
-  const [employees, nominations, reviews, auditLogs, aiLogs] = await Promise.all([
+  const [employees, nominations, reviews, auditLogs, authEvents, aiUsageEvents, aiDecisionEvents] = await Promise.all([
     prisma.employee.findMany({
       where: { isActive: true, role: { not: "SYSTEM_ADMIN" } },
-      select: { id: true, department: { select: { name: true } }, jobGrade: true },
+      select: { id: true, department: { select: { name: true } }, jobGrade: true, gender: true, employmentType: true, conversionHireStatus: true },
     }),
     prisma.nomination.findMany({
       where: cycleWhere,
@@ -107,14 +107,24 @@ export default async function SystemAdminDashboard() {
       orderBy: { createdAt: "desc" },
       take: 250,
     }),
-    prisma.auditLog.findMany({
-      where: { action: { startsWith: "AI_" }, createdAt: { gte: since } },
+    prisma.authEvent.findMany({
+      where: { createdAt: { gte: since } },
+      orderBy: { createdAt: "desc" },
+      take: 500,
+    }),
+    prisma.aiUsageEvent.findMany({
+      where: { createdAt: { gte: since } },
+      orderBy: { createdAt: "desc" },
+      take: 500,
+    }),
+    prisma.aiHitlDecision.findMany({
+      where: { createdAt: { gte: since } },
       orderBy: { createdAt: "desc" },
       take: 500,
     }),
   ]);
 
-  const loginEvents = auditLogs.filter((row) => row.action === "LOGIN_SUCCEEDED");
+  const loginEvents = authEvents.filter((row) => row.status === "SUCCESS");
   const uniqueLoginUsers = new Set(loginEvents.map((row) => row.actorId).filter(Boolean)).size;
   const submittedNominations = nominations.filter((row) => row.submissionStatus === "SUBMITTED").length;
   const pendingApprovals = nominations.filter((row) => row.approvalStatus === "PENDING").length;
@@ -124,20 +134,31 @@ export default async function SystemAdminDashboard() {
   const missingCommentReviews = reviews.filter((row) =>
     row.status === "SUBMITTED" && (!row.doWellComment || !row.improveComment)
   ).length;
-  const aiGenerationLogs = aiLogs.filter((row) => row.action !== "AI_HITL_DECISION");
-  const aiDecisionLogs = aiLogs.filter((row) => row.action === "AI_HITL_DECISION");
-  const aiSuccesses = aiGenerationLogs.filter((row) => (row.metadata as any)?.status === "success").length;
-  const aiStubbed = aiGenerationLogs.filter((row) => (row.metadata as any)?.stub === true).length;
-  const aiTokens = aiGenerationLogs.reduce((sum, row) => sum + Number((row.metadata as any)?.totalTokens ?? 0), 0);
-  const aiInputTokens = aiGenerationLogs.reduce((sum, row) => sum + Number((row.metadata as any)?.promptTokens ?? 0), 0);
-  const aiOutputTokens = aiGenerationLogs.reduce((sum, row) => sum + Number((row.metadata as any)?.completionTokens ?? 0), 0);
-  const aiAccepted = aiDecisionLogs.filter((row) => (row.metadata as any)?.decision === "accepted").length;
-  const aiEdited = aiDecisionLogs.filter((row) => (row.metadata as any)?.decision === "edited").length;
-  const aiDiscarded = aiDecisionLogs.filter((row) => (row.metadata as any)?.decision === "discarded").length;
+  const aiGenerationLogs = aiUsageEvents;
+  const aiSuccesses = aiGenerationLogs.filter((row) => row.status === "SUCCESS").length;
+  const aiStubbed = aiGenerationLogs.filter((row) => row.stub).length;
+  const aiTokens = aiGenerationLogs.reduce((sum, row) => sum + row.totalTokens, 0);
+  const aiInputTokens = aiGenerationLogs.reduce((sum, row) => sum + row.inputTokens, 0);
+  const aiOutputTokens = aiGenerationLogs.reduce((sum, row) => sum + row.outputTokens, 0);
+  const aiAccepted = aiDecisionEvents.filter((row) => row.decision === "ACCEPTED").length;
+  const aiEdited = aiDecisionEvents.filter((row) => row.decision === "EDITED").length;
+  const aiDiscarded = aiDecisionEvents.filter((row) => row.decision === "DISCARDED").length;
 
   const departmentCounts = employees.reduce<Record<string, number>>((acc, employee) => {
     const dept = employee.department.name;
     acc[dept] = (acc[dept] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const genderCounts = employees.reduce<Record<string, number>>((acc, employee) => {
+    const label = employee.gender?.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase()) ?? "Not captured";
+    acc[label] = (acc[label] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const employmentTypeCounts = employees.reduce<Record<string, number>>((acc, employee) => {
+    const label = employee.employmentType.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+    acc[label] = (acc[label] ?? 0) + 1;
     return acc;
   }, {});
 
@@ -396,6 +417,44 @@ export default async function SystemAdminDashboard() {
             ))}
         </div>
       </Section>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <Section title="Gender Adoption Context" sub="Aggregated employee distribution for adoption and inclusivity monitoring.">
+          <div className="space-y-2">
+            {Object.entries(genderCounts)
+              .sort((a, b) => b[1] - a[1])
+              .map(([gender, count]) => (
+                <div key={gender} className="rounded-lg border border-gray-100 p-3">
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <span className="text-sm font-semibold text-gray-800">{gender}</span>
+                    <span className="text-xs font-bold text-gray-500">{count}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-gray-100">
+                    <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${pct(count, employees.length)}%` }} />
+                  </div>
+                </div>
+              ))}
+          </div>
+        </Section>
+
+        <Section title="Employment Mix" sub="Workforce composition used to compare adoption across contract, permanent, internship, and learnership groups.">
+          <div className="space-y-2">
+            {Object.entries(employmentTypeCounts)
+              .sort((a, b) => b[1] - a[1])
+              .map(([type, count]) => (
+                <div key={type} className="rounded-lg border border-gray-100 p-3">
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <span className="text-sm font-semibold text-gray-800">{type}</span>
+                    <span className="text-xs font-bold text-gray-500">{count}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-gray-100">
+                    <div className="h-2 rounded-full bg-[#0f1f3d]" style={{ width: `${pct(count, employees.length)}%` }} />
+                  </div>
+                </div>
+              ))}
+          </div>
+        </Section>
+      </div>
     </div>
   );
 }
