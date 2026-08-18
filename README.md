@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/shotza247-pulse360-hackathon-day-badge.png)](https://mseep.ai/app/shotza247-pulse360-hackathon-day)
+
 # Pulse360 — 360° Performance Review
 
 > **Pulse360** is a full-stack internal 360° performance review platform built for semi-annual/quarterly/monthly cycles.
