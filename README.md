@@ -129,6 +129,7 @@ Create `pulse360/.env` with the following (never committed to git):
 
 ```env
 DATABASE_URL="postgresql://pulse360_user:password123@localhost:5432/pulse360"
+DIRECT_URL="postgresql://pulse360_user:password123@localhost:5432/pulse360"
 NEXTAUTH_SECRET="pulse360-dev-secret-change-in-production-32chars"
 NEXTAUTH_URL="http://localhost:3000"
 OPENAI_API_KEY="sk-..."    # Optional — app falls back to stub responses if not set
@@ -159,6 +160,7 @@ Deployed App is on: **https://pulse360-gkt8.onrender.com**
 | Variable | Required | Description |
 |---|---|---|
 | `DATABASE_URL` | ✅ | PostgreSQL connection string |
+| `DIRECT_URL` | ⚠️ Recommended | Direct PostgreSQL connection for Prisma migrations; with Supabase, keep `DATABASE_URL` pooled and `DIRECT_URL` direct/session |
 | `NEXTAUTH_SECRET` | ✅ | Random string for JWT signing (min 32 chars) |
 | `NEXTAUTH_URL` | ✅ | Base URL of the app (`http://localhost:3000` locally) |
 | `OPENAI_API_KEY` | ⚠️ Optional | Enables live AI Comment Suggestions, Theme Summary, Improvement Plan, and PDF Report narrative. App falls back to realistic stub responses if not set. |
