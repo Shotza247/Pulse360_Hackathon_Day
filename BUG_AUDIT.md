@@ -1,0 +1,28 @@
+## 2026-09-03 09:02 - Supabase Restore Dump Too Short
+
+- Status: partially fixed
+- Symptom: `pg_restore: error: input file is too short (read 0, expected 5)` when restoring `pulse360-render-backup.dump` into Supabase using Docker.
+- Scope: Render Postgres to Supabase migration backup/restore workflow.
+- Suspected cause: The mounted `/backup/pulse360-render-backup.dump` file is missing, empty, or was created by a failed/incomplete `pg_dump` attempt.
+- Evidence:
+  - `Get-ChildItem` in the project root found no `*.dump` or backup file.
+  - Recursive search under the Codex git workspace found no `pulse360-render-backup.dump`.
+  - Docker `postgres:16-alpine` backup attempt failed with `server version: 18.4`; `pg_dump version: 16.15`.
+  - After retrying, the shared repo root still had no `pulse360-render-backup.dump`, so the backup command did not write a dump file to the expected mounted directory.
+  - Docker mount diagnostic passed with `pg_dump (PostgreSQL) 18.6` and wrote `/backup/docker-mount-test.txt`.
+  - PostgreSQL 18 `pg_dump` successfully connected to Render and dumped all application tables, including `_prisma_migrations`, `employee`, `nomination`, `review`, `audit_log`, and the event tables.
+  - Codex did not find `pulse360-render-backup.dump` in its project root after the user's successful dump output, suggesting the user's PowerShell current directory may differ from the shared repo root.
+  - User verified the dump exists at `C:\Users\Jabulani Ndlovu\Downloads\Git_Clones\Pulse360_Hackathon_Day\pulse360-render-backup.dump` with length `117220` bytes.
+  - Supabase restore attempt failed with `connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed`, which means `pg_restore` did not receive a usable database URL and fell back to the container's local PostgreSQL socket.
+  - Docker env-var diagnostic using `sh -c 'if ... fi'` failed with `syntax error: unexpected end of file`, indicating shell quoting was parsed incorrectly before the variable could be tested.
+  - PowerShell `SUPABASE_DATABASE_URL.Length` returned `109`, confirming the URL is now set locally without exposing the secret.
+- Decision:
+  - Docker and the project-folder mount are working. The next likely failure point is the Render database URL value or the actual `pg_dump` connection.
+- Decision:
+  - The restore file was empty because the backup step failed before producing a valid dump. PostgreSQL requires `pg_dump` to be the same major version as, or newer than, the server.
+- Changes:
+  - No app code changes. Recovery needs a verified fresh `pg_dump` before retrying `pg_restore`.
+- Verification:
+  - Docker mount test passed. PostgreSQL 18 `pg_dump` output shows table dump completed. Dump file verified non-empty at `117220` bytes.
+- Follow-up:
+  - Retry `pg_restore` using direct PowerShell variable expansion for `--dbname` to avoid container shell quoting.
