@@ -109,3 +109,23 @@
   - `render.yaml`: changed `DATABASE_URL` to `sync: false` and removed the retired `pulse360-db` Blueprint database declaration.
 - Follow-up:
   - Set both Render `DATABASE_URL` and `DIRECT_URL` to the Supabase session pooler connection string on port `5432`, apply the Blueprint change, and redeploy.
+
+## 2026-09-10 12:26 - Supabase Pooler and Blueprint Cutover Verified
+
+- Status: passed
+- Goal: Confirm that the deployed service can complete migrations, seed Supabase, and start after removing the retired Render database mapping.
+- Scope: Render Blueprint environment configuration, Supabase pooler connectivity, Prisma startup, and database seeding.
+- Evidence:
+  - Prisma connected to `aws-1-eu-west-1.pooler.supabase.com:5432`.
+  - Prisma found four migrations and reported `No pending migrations to apply.`
+  - `Database seed completed.`
+  - Next.js reported `Ready` on port `10000`.
+  - Render reported `Your service is live` at `https://pulse360-gkt8.onrender.com`.
+- Changes:
+  - Render `DATABASE_URL` and `DIRECT_URL` now use Supabase pooler connectivity.
+  - The Blueprint no longer injects the retired Render database URL or declares `pulse360-db` as a managed dependency.
+- Verification:
+  - Build, migration check, seed, application startup, and Render availability all passed.
+  - The earlier `P1001` direct-host failure and `ENOTFOUND` retired Render-host failure are resolved.
+- Follow-up:
+  - Perform the application smoke test: login, dashboard reads, approval/review counter refresh, one safe write, audit-event creation, report generation, and downloads.
