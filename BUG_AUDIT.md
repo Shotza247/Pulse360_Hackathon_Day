@@ -1,9 +1,10 @@
-## 2026-09-03 09:02 - Supabase Restore Dump Too Short
+## 2026-09-03 09:02 - Postgres & Supabase Compatibility
 
-- Status: partially fixed
-- Symptom: `pg_restore: error: input file is too short (read 0, expected 5)` when restoring `pulse360-render-backup.dump` into Supabase using Docker.
-- Scope: Render Postgres to Supabase migration backup/restore workflow.
-- Suspected cause: The mounted `/backup/pulse360-render-backup.dump` file is missing, empty, or was created by a failed/incomplete `pg_dump` attempt.
+- Status: monitoring
+- Goal: Migrate the Pulse360 PostgreSQL database from Render to Supabase without losing application, audit, authentication, review, or AI-usage data.
+- Scope: Render PostgreSQL 18 to Supabase PostgreSQL backup, restore, and verification workflow.
+- Symptom: The first restore failed with `pg_restore: error: input file is too short (read 0, expected 5)`. Subsequent attempts exposed a PostgreSQL client/server version mismatch and a Docker environment-variable expansion issue.
+- Suspected cause: The initial dump was empty because the backup step had not completed successfully. The later restore connection failure occurred because the Supabase URL was not passed into the container and `pg_restore` fell back to the local PostgreSQL socket.
 - Evidence:
   - `Get-ChildItem` in the project root found no `*.dump` or backup file.
   - Recursive search under the Codex git workspace found no `pulse360-render-backup.dump`.
@@ -16,13 +17,66 @@
   - Supabase restore attempt failed with `connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed`, which means `pg_restore` did not receive a usable database URL and fell back to the container's local PostgreSQL socket.
   - Docker env-var diagnostic using `sh -c 'if ... fi'` failed with `syntax error: unexpected end of file`, indicating shell quoting was parsed incorrectly before the variable could be tested.
   - PowerShell `SUPABASE_DATABASE_URL.Length` returned `109`, confirming the URL is now set locally without exposing the secret.
-- Decision:
-  - Docker and the project-folder mount are working. The next likely failure point is the Render database URL value or the actual `pg_dump` connection.
-- Decision:
-  - The restore file was empty because the backup step failed before producing a valid dump. PostgreSQL requires `pg_dump` to be the same major version as, or newer than, the server.
+  - `pg_restore` connected to Supabase, dropped/recreated the `public` schema objects, processed all application tables, reset sequences, rebuilt indexes, and recreated foreign keys without a reported restore error.
+  - Supabase table-count verification returned expected populated tables: `employee=59`, `department=11`, `review_cycle=3`, `nomination=75`, `review=21`, `audit_log=477`, `auth_event=111`, `ai_usage_event=25`.
+- Decisions:
+  - Use a PostgreSQL 18 client image for the Render PostgreSQL 18 source; the PostgreSQL client must not be older than the server major version for this workflow.
+  - Treat the non-empty dump and successful Supabase row-count checks as a completed migration milestone, but do not retire the Render database until the deployed application has been verified against Supabase.
 - Changes:
-  - No app code changes. Recovery needs a verified fresh `pg_dump` before retrying `pg_restore`.
+  - No application code changes. Recovery used `postgres:18-alpine`, verified the Docker volume mount, created a non-empty custom-format dump, and passed the Supabase URL through the Docker restore command.
+- Comments:
+  - The original `input file is too short` error was a backup artifact problem, not evidence that the application schema was incompatible with Supabase.
+  - The PostgreSQL 18 dump completed for the Prisma migration table, employee and department data, review cycles, nominations, reviews, audit logs, authentication events, AI usage events, and related event tables.
+  - PowerShell and nested `sh -c` quoting caused the restore URL diagnostic to be misleading. The successful restore confirms the database URL is now being passed correctly; the URL itself is intentionally not recorded here.
+  - The restore is verified at the database level. Runtime compatibility still requires Render to use Supabase through its production `DATABASE_URL` and Prisma `DIRECT_URL` configuration.
 - Verification:
-  - Docker mount test passed. PostgreSQL 18 `pg_dump` output shows table dump completed. Dump file verified non-empty at `117220` bytes.
+  - Docker mount test passed. PostgreSQL 18 `pg_dump` output shows table dump completed. Dump file verified non-empty at `117220` bytes. Supabase restore output shows schema and data restore completed through foreign-key recreation. Supabase row counts confirm core application, audit, auth, and AI usage tables contain data.
 - Follow-up:
-  - Retry `pg_restore` using direct PowerShell variable expansion for `--dbname` to avoid container shell quoting.
+  - Update Render `DATABASE_URL` and `DIRECT_URL` to the Supabase connection strings, redeploy, and verify the health endpoint, login, reads, writes, migrations, audit logging, and AI-usage logging before considering the cutover complete.
+
+## 2026-09-08 20:06 - Supabase Production Cutover Verified
+
+- Status: passed
+- Goal: Verify that the Render web service can run against the restored Supabase database after the Render PostgreSQL database was suspended.
+- Scope: Render `pulse360` web service startup, Prisma migrations, database seed, and production runtime.
+- Evidence:
+  - Prisma connected to Supabase at `aws-1-eu-west-1.pooler.supabase.com:5432`.
+  - Prisma found `4 migrations` and reported `No pending migrations to apply.`
+  - `Database seed completed.`
+  - Next.js started successfully on Render and reported `Ready`.
+  - Render reported `Your service is live` at `https://pulse360-gkt8.onrender.com`.
+- Changes:
+  - Render service environment variables were updated to use the Supabase database URLs.
+- Verification:
+  - Build succeeded, database migration check passed, seed completed, and the web service became live.
+  - The suspended Render PostgreSQL database did not prevent the application from starting because the service is now using Supabase.
+- Follow-up:
+  - Run production smoke tests for `/api/health`, login, dashboard reads, writes, audit events, AI usage events, report generation, and downloads before retiring the suspended Render database from the migration records.
+
+## 2026-09-10 - Approval Counter Stale Until Refresh
+
+- Status: fixed
+- Symptom: After a line manager approved or rejected a nomination, the approvals list changed but the sidebar/dashboard approval count stayed stale until the page was manually refreshed.
+- Scope: `pulse360/src/app/(app)/approvals/page.tsx`, server-rendered app layout, and workflow badge counts.
+- Root cause: The approvals page updated its local `nominations` state, while the sidebar badge and dashboard count were calculated by the server-rendered layout through `getSidebarBadgeCounts`. No server-component refresh was requested after the mutation.
+- Changes:
+  - `pulse360/src/app/(app)/approvals/page.tsx`: added `router.refresh()` after successful single approve, single reject, employee bulk approve, and all-nominations bulk approve actions.
+- Verification:
+  - The approval list still updates immediately through local state.
+  - The targeted App Router refresh now re-renders server-derived layout/dashboard counts without requiring a browser reload.
+- Follow-up:
+  - Verify in production with a line-manager account by approving one nomination and confirming the sidebar badge and dashboard card decrement immediately.
+
+## 2026-09-10 - My Reviews Counter Stale After Submission
+
+- Status: fixed
+- Symptom: After an employee submitted feedback, the `My Reviews` count remained unchanged until the page was manually refreshed.
+- Scope: `pulse360/src/app/(app)/reviews/[employeeId]/page.tsx`, server-rendered app layout, and `countPendingReviewsForReviewer`.
+- Root cause: Review submission updated the database and navigated back to `/reviews`, but the shared server-rendered layout could retain the previous badge count during client navigation.
+- Decision: Draft saves must remain counted as pending; only final `SUBMITTED` reviews decrement the count.
+- Changes:
+  - `pulse360/src/app/(app)/reviews/[employeeId]/page.tsx`: added `router.refresh()` on successful final submission before returning to `/reviews`.
+- Verification:
+  - TypeScript validation passed after the change.
+- Follow-up:
+  - Verify in production by submitting one review and confirming the `My Reviews` sidebar badge and dashboard card decrement without a browser refresh.

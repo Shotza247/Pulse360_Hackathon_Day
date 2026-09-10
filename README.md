@@ -10,20 +10,21 @@
 
 1. [Overview](#overview)
 2. [Tech Stack](#tech-stack)
-3. [Team](#team)
-4. [Prerequisites](#prerequisites)
-5. [Getting Started](#getting-started)
-6. [Environment Variables](#environment-variables)
-7. [Database](#database)
-8. [Running the App](#running-the-app)
-9. [Test Accounts](#test-accounts)
-10. [Project Structure](#project-structure)
-11. [API Reference](#api-reference)
-12. [Review Cycle Lifecycle](#review-cycle-lifecycle)
-13. [Features Implemented](#features-implemented)
-14. [Human-in-the-Loop Log](#human-in-the-loop-log)
-15. [IBM Bob — Agentic AI Platform Notes](#ibm-bob--agentic-ai-platform-notes)
-16. [Useful Commands](#useful-commands)
+3. [Architecture](#architecture)
+4. [Team](#team)
+5. [Prerequisites](#prerequisites)
+6. [Getting Started](#getting-started)
+7. [Environment Variables](#environment-variables)
+8. [Database](#database)
+9. [Running the App](#running-the-app)
+10. [Test Accounts](#test-accounts)
+11. [Project Structure](#project-structure)
+12. [API Reference](#api-reference)
+13. [Review Cycle Lifecycle](#review-cycle-lifecycle)
+14. [Features Implemented](#features-implemented)
+15. [Human-in-the-Loop Log](#human-in-the-loop-log)
+16. [IBM Bob — Agentic AI Platform Notes](#ibm-bob--agentic-ai-platform-notes)
+17. [Useful Commands](#useful-commands)
 
 ---
 
@@ -43,8 +44,8 @@ All features were built using **IBM Bob**, an enterprise agentic AI platform(Age
 |---|---|---|
 | Framework | Next.js (App Router) | 16.2.12 |
 | Language | TypeScript | 5.x |
-| Database | PostgreSQL | 16 |
-| Container | Podman | 5.7.1 |
+| Production database | Supabase PostgreSQL | PostgreSQL-compatible |
+| Local database | PostgreSQL via Podman | Development only |
 | ORM | Prisma | 7.9.1 |
 | Auth | NextAuth.js | 4.24.15 |
 | UI | Tailwind CSS | 4.x |
@@ -53,8 +54,49 @@ All features were built using **IBM Bob**, an enterprise agentic AI platform(Age
 | MCP Tooling | Model Context Protocol SDK | 1.11.4 |
 | Runtime | Node.js | 22.x |
 
-> **Note:** This project uses **Podman** (not Docker). The `docker-compose.yml` in the root is kept for reference only. The database is started with `podman run` — see [Database](#database).
-> My Docker env was running on a different machine for a BPMN agentic system build for an e-commerce client's order-processing with agentic capabilities.(projet to be released soon to the public)
+> **Production note:** Render hosts the Next.js web service and Supabase is the production PostgreSQL source of truth. Podman is optional and is used only for local development. See [RENDER_TO_SUPABASE_MIGRATION.md](RENDER_TO_SUPABASE_MIGRATION.md) for the migration record and recovery procedure.
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+    U[Users] --> R[Render Web Service]
+    R --> N[Next.js + TypeScript]
+    N --> AUTH[NextAuth + RBAC]
+    N --> P[Prisma]
+    P --> DB[(Supabase PostgreSQL)]
+    N -. optional .-> AI[OpenAI API]
+    N -. approval-gated .-> MCP[pulse360-mcp]
+    MCP --> FILES[CSV / PDF Downloads]
+    DB --> EVENTS[Audit and Event Tables]
+    EVENTS --> SYS[System Admin Aggregated Analytics]
+    EVENTS -. future ETL .-> BQ[(BigQuery)]
+```
+
+```text
+Browser
+  -> Render Web Service
+       -> Next.js App Router / API routes
+       -> NextAuth + server-side RBAC
+       -> Prisma
+            -> Supabase PostgreSQL
+       -> OpenAI API (optional AI assistance)
+       -> pulse360-mcp (human-approved CSV/report generation)
+```
+
+Supabase stores the transactional application data and dedicated event projections used by the System Admin dashboard. These projections include authentication, profile, nomination, review, audit, AI usage, and AI human-in-the-loop events. System Admin analytics are operational and aggregated; review comments and scores remain outside that dashboard.
+
+BigQuery is a future analytics-warehouse option, not part of the live transaction path. The application should write to Supabase first, then export selected event data through scheduled ETL after the production database is stable.
+
+Production URL: **https://pulse360-gkt8.onrender.com**
+
+Architecture requirements and non-functional requirements are maintained in [3. Architecture Requirements.md](3.%20Architecture%20Requirements.md).
+
+The full Mermaid architecture, event analytics, and review-cycle diagrams are maintained in [3. Architecture Requirements.md](3.%20Architecture%20Requirements.md).
+
+> **Blueprint note:** The live Render service has been switched to Supabase through its environment variables. The current `render.yaml` still contains the original Render Postgres resource for historical Blueprint compatibility. Do not manually synchronize that Blueprint until the `DATABASE_URL` mapping and `databases` block are updated according to [RENDER_TO_SUPABASE_MIGRATION.md](RENDER_TO_SUPABASE_MIGRATION.md).
 
 ---
 
@@ -87,11 +129,13 @@ All features were built using **IBM Bob**, an enterprise agentic AI platform(Age
 ### 1. Clone the repository
 
 ```bash
-git clone https://bitbucket.org/ovmobile/hackathon-v1-ibm.git
-cd hackathon-v2-ibm
+git clone https://github.com/Shotza247/Pulse360_Hackathon_Day.git
+cd Pulse360_Hackathon_Day
 ```
 
-### 2. Start the PostgreSQL database
+For production, use the deployed Render service and Supabase database. The local database instructions below are for development only.
+
+### 2. Start an optional local PostgreSQL database
 
 ```powershell
 # Start the container (first time — creates and seeds the DB)
@@ -101,7 +145,7 @@ podman run -d `
   -e POSTGRES_PASSWORD=password123 `
   -e POSTGRES_DB=pulse360 `
   -p 5432:5432 `
-  postgres:16-alpine
+  postgres:18-alpine
 
 # Apply all init scripts in order
 Get-ChildItem database\init\*.sql | Sort-Object Name | ForEach-Object {
@@ -151,7 +195,7 @@ npm run dev
 
 App is available at **http://localhost:3000** locally
 
-Deployed App is on: **https://pulse360-gkt8.onrender.com**
+Production app: **https://pulse360-gkt8.onrender.com**
 
 ---
 
@@ -159,17 +203,21 @@ Deployed App is on: **https://pulse360-gkt8.onrender.com**
 
 | Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | ✅ | PostgreSQL connection string |
-| `DIRECT_URL` | ⚠️ Recommended | Direct PostgreSQL connection for Prisma migrations; with Supabase, keep `DATABASE_URL` pooled and `DIRECT_URL` direct/session |
+| `DATABASE_URL` | ✅ | Supabase pooled/session PostgreSQL connection for application traffic |
+| `DIRECT_URL` | ⚠️ Recommended | Supabase direct or stable session connection for Prisma migrations and administrative tooling |
 | `NEXTAUTH_SECRET` | ✅ | Random string for JWT signing (min 32 chars) |
-| `NEXTAUTH_URL` | ✅ | Base URL of the app (`http://localhost:3000` locally) |
+| `NEXTAUTH_URL` | ✅ | Base URL of the app: `http://localhost:3000` locally and `https://pulse360-gkt8.onrender.com` in production |
 | `OPENAI_API_KEY` | ⚠️ Optional | Enables live AI Comment Suggestions, Theme Summary, Improvement Plan, and PDF Report narrative. App falls back to realistic stub responses if not set. |
 
 ---
 
 ## Database
 
-### Init scripts (`database/init/`)
+### Production database
+
+Supabase is the production database. Render is the application host, not the current database runtime target. Prisma migrations are stored under `pulse360/prisma/migrations` and are applied during deployment with `prisma migrate deploy`.
+
+### Local init scripts (`database/init/`)
 
 Scripts are applied in order on first container start:
 
@@ -617,10 +665,10 @@ cd pulse360/mcp-server; npm run build
 # Check status
 git status
 
-# Push to Bitbucket
+# Push to GitHub
 git add -A
 git commit -m "feat: describe your change"
-git push origin main
+git push origin <branch-name>
 ```
 
 ---
