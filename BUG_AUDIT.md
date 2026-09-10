@@ -80,3 +80,32 @@
   - TypeScript validation passed after the change.
 - Follow-up:
   - Verify in production by submitting one review and confirming the `My Reviews` sidebar badge and dashboard card decrement without a browser refresh.
+
+## 2026-09-10 11:08 - Render Cannot Reach Supabase Direct Host
+
+- Status: blocked
+- Symptom: Render build succeeded, but startup failed during `prisma migrate deploy` with `P1001: Can't reach database server at db.gqkthxeqrnppllajsxws.supabase.co:5432`.
+- Scope: Render production startup and Prisma `DIRECT_URL` connectivity after the auto-refresh pull request was merged.
+- Evidence:
+  - Next.js production build completed successfully.
+  - Render started `npm run render:start` and reached Prisma migration startup.
+  - Prisma resolved the datasource to the Supabase direct database hostname on port `5432`.
+  - The service exited before seeding or starting Next.js because the direct Supabase host was unreachable from Render.
+  - The `npm audit` vulnerability summary is a warning and is not the cause of this failure.
+- Suspected cause:
+  - Render cannot reach the Supabase direct database hostname from its network path, commonly because the direct endpoint is IPv6-only or otherwise unavailable to the runtime. The previous successful deployment used a Supavisor session pooler hostname.
+- Decision:
+  - Keep `DATABASE_URL` on the Supabase pooled/session connection and change `DIRECT_URL` to the Supabase session pooler connection copied from Supabase **Connect**. Do not use the direct `db.<project-ref>.supabase.co` host for Render migrations when it is unreachable.
+- Follow-up:
+  - Update Render `DIRECT_URL` with the Supabase session pooler URL on port `5432`, save and redeploy, then verify `No pending migrations to apply`, seed completion, `Ready`, and `Your service is live`.
+
+## 2026-09-10 11:32 - Seed Still Using Retired Render Database URL
+
+- Status: investigating
+- Symptom: After `DIRECT_URL` was changed to the Supabase pooler, Prisma migrations passed but `npm run db:seed` failed with `getaddrinfo ENOTFOUND dpg-d9qn1rrm8hqs738pir8g-a`.
+- Scope: Render Blueprint environment configuration and `pulse360/scripts/seed-database.js`.
+- Root cause: `DIRECT_URL` reached Supabase, but `DATABASE_URL` was still supplied by the legacy `fromDatabase` mapping in `render.yaml`. The seed script intentionally reads `DATABASE_URL`, so it attempted to connect to the suspended Render database.
+- Changes:
+  - `render.yaml`: changed `DATABASE_URL` to `sync: false` and removed the retired `pulse360-db` Blueprint database declaration.
+- Follow-up:
+  - Set both Render `DATABASE_URL` and `DIRECT_URL` to the Supabase session pooler connection string on port `5432`, apply the Blueprint change, and redeploy.

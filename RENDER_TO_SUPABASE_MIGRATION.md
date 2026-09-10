@@ -114,9 +114,9 @@ NODE_ENV=production
 
 Do not rotate `NEXTAUTH_SECRET` during the database migration unless you intentionally want all sessions invalidated.
 
-### 7. Update Render Blueprint when ready
+### 7. Update Render Blueprint
 
-The current `render.yaml` still declares a Render-managed database. When you fully move to Supabase, change the Blueprint so Render stops trying to create/use `pulse360-db`.
+The Blueprint has been updated so the production service no longer receives `DATABASE_URL` from the retired Render-managed database. `DATABASE_URL` and `DIRECT_URL` are now manually supplied through Render environment values.
 
 Recommended future `envVars` shape:
 
@@ -138,7 +138,7 @@ envVars:
 
 Then remove the `databases:` block from `render.yaml`.
 
-Do this only after the Supabase database is restored and Render env vars are set, otherwise the next Blueprint sync can break the service.
+The Blueprint change must be applied only after the Supabase database is restored and both Render environment values are populated.
 
 ### 8. Deploy and smoke test
 

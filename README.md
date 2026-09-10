@@ -96,7 +96,7 @@ Architecture requirements and non-functional requirements are maintained in [3. 
 
 The full Mermaid architecture, event analytics, and review-cycle diagrams are maintained in [3. Architecture Requirements.md](3.%20Architecture%20Requirements.md).
 
-> **Blueprint note:** The live Render service has been switched to Supabase through its environment variables. The current `render.yaml` still contains the original Render Postgres resource for historical Blueprint compatibility. Do not manually synchronize that Blueprint until the `DATABASE_URL` mapping and `databases` block are updated according to [RENDER_TO_SUPABASE_MIGRATION.md](RENDER_TO_SUPABASE_MIGRATION.md).
+> **Blueprint note:** The live Render service uses Supabase through manually supplied `DATABASE_URL` and `DIRECT_URL` values. The Blueprint no longer sources `DATABASE_URL` from the retired Render Postgres resource or declares that database as a managed production dependency.
 
 ---
 
