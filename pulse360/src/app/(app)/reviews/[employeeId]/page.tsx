@@ -79,7 +79,11 @@ export default function ReviewFormPage({ params }: { params: Promise<{ employeeI
     });
     const data = await res.json();
     if (!res.ok) { setError(data.error ?? "Save failed"); setSaving(false); return; }
-    if (submit) router.push("/reviews");
+    if (submit) {
+      // Recompute the server-rendered sidebar/dashboard review count after submission.
+      router.refresh();
+      router.push("/reviews");
+    }
     else { setError(""); setSaving(false); }
   }
 

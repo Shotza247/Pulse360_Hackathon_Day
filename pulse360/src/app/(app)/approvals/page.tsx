@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 type Department = { name: string };
 type Person = { id: number; firstName: string; lastName: string; jobTitle: string | null; department: Department };
@@ -15,6 +16,7 @@ type Nomination = {
 type Cycle = { id: number; name: string; phase: string };
 
 export default function ApprovalsPage() {
+  const router = useRouter();
   const [role, setRole] = useState<string>("");
   const [cycle, setCycle] = useState<Cycle | null>(null);
   const [nominations, setNominations] = useState<Nomination[]>([]);
@@ -66,6 +68,7 @@ export default function ApprovalsPage() {
     const res = await fetch(`/api/approvals/${nomId}/approve`, { method: "POST" });
     if (res.ok || res.status === 303) {
       setNominations((prev) => prev.filter((n) => n.id !== nomId));
+      router.refresh();
       showToast("Nomination approved");
     } else {
       showToast("Approve failed", "error");
@@ -79,6 +82,7 @@ export default function ApprovalsPage() {
     const res = await fetch(`/api/approvals/${nomId}/reject`, { method: "POST" });
     if (res.ok || res.status === 303) {
       setNominations((prev) => prev.filter((n) => n.id !== nomId));
+      router.refresh();
       showToast("Nomination rejected");
     } else {
       showToast("Reject failed", "error");
@@ -97,6 +101,7 @@ export default function ApprovalsPage() {
     const data = await res.json();
     if (res.ok) {
       setNominations((prev) => prev.filter((n) => n.employeeId !== employeeId));
+      router.refresh();
       showToast(`${data.approved} nomination${data.approved !== 1 ? "s" : ""} approved for this employee`);
     } else {
       showToast(data.error ?? "Bulk approve failed", "error");
@@ -115,6 +120,7 @@ export default function ApprovalsPage() {
     const data = await res.json();
     if (res.ok) {
       setNominations([]);
+      router.refresh();
       showToast(`All ${data.approved} pending nominations approved ✓`);
     } else {
       showToast(data.error ?? "Bulk approve failed", "error");

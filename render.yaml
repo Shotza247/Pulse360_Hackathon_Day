@@ -17,6 +17,8 @@ services:
         fromDatabase:
           name: pulse360-db
           property: connectionString
+      - key: DIRECT_URL
+        sync: false
       - key: NEXTAUTH_SECRET
         generateValue: true
       - key: NEXTAUTH_URL
