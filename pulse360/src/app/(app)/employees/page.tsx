@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function EmployeesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; dept?: string; role?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; dept?: string; role?: string; manager?: string; page?: string }>;
 }) {
   const session = await getServerSession(authOptions);
   const userSession = session?.user as any;
@@ -19,30 +19,40 @@ export default async function EmployeesPage({
   const q          = params.q    ?? "";
   const deptFilter = params.dept ?? "";
   const roleFilter = params.role ?? "";
+  const managerFilter = params.manager ?? "";
+  const managerIdFilter = Number(managerFilter);
   const page       = Number(params.page ?? "1");
   const pageSize   = 20;
 
-  const [employees, total, departments] = await Promise.all([
+  const employeeWhere = {
+    isActive: true,
+    role: { not: "SYSTEM_ADMIN" as const },
+    ...(q ? { OR: [
+      { firstName: { contains: q, mode: "insensitive" as const } },
+      { lastName:  { contains: q, mode: "insensitive" as const } },
+      { email:     { contains: q, mode: "insensitive" as const } },
+      { jobTitle:  { contains: q, mode: "insensitive" as const } },
+    ] } : {}),
+    ...(deptFilter ? { department: { name: deptFilter } } : {}),
+    ...(roleFilter ? { role: roleFilter as any } : {}),
+    ...(Number.isInteger(managerIdFilter) && managerIdFilter > 0 ? { managerId: managerIdFilter } : {}),
+  };
+
+  const [employees, total, departments, managers] = await Promise.all([
     prisma.employee.findMany({
-      where: {
-        isActive: true,
-        role: { not: "SYSTEM_ADMIN" },
-        ...(q ? { OR: [
-          { firstName: { contains: q, mode: "insensitive" } },
-          { lastName:  { contains: q, mode: "insensitive" } },
-          { email:     { contains: q, mode: "insensitive" } },
-          { jobTitle:  { contains: q, mode: "insensitive" } },
-        ]} : {}),
-        ...(deptFilter ? { department: { name: deptFilter } } : {}),
-        ...(roleFilter ? { role: roleFilter as any } : {}),
-      },
+      where: employeeWhere,
       include: { department: true, manager: { select: { firstName: true, lastName: true } } },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),
-    prisma.employee.count({ where: { isActive: true, role: { not: "SYSTEM_ADMIN" } } }),
+    prisma.employee.count({ where: employeeWhere }),
     prisma.department.findMany({ orderBy: { name: "asc" } }),
+    prisma.employee.findMany({
+      where: { isActive: true, role: "LINE_MANAGER" },
+      select: { id: true, firstName: true, lastName: true, department: { select: { name: true } } },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    }),
   ]);
 
   const totalPages = Math.ceil(total / pageSize);
@@ -82,6 +92,15 @@ export default async function EmployeesPage({
           <option value="HR_ADMIN">HR Admin</option>
           <option value="LINE_MANAGER">Line Manager</option>
           <option value="EMPLOYEE">Employee</option>
+        </select>
+        <select name="manager" defaultValue={managerFilter}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f1f3d]/20">
+          <option value="">All Line Managers</option>
+          {managers.map((manager) => (
+            <option key={manager.id} value={manager.id}>
+              {manager.firstName} {manager.lastName} — {manager.department.name}
+            </option>
+          ))}
         </select>
         <button type="submit" className="rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 transition">Filter</button>
         <Link href="/employees" className="rounded-lg text-gray-500 hover:text-gray-800 text-sm px-3 py-2">Clear</Link>
@@ -141,11 +160,11 @@ export default async function EmployeesPage({
             <p className="text-xs text-gray-500">Page {page} of {totalPages}</p>
             <div className="flex gap-2">
               {page > 1 && (
-                <Link href={`/employees?page=${page - 1}&q=${q}&dept=${deptFilter}&role=${roleFilter}`}
+                <Link href={`/employees?page=${page - 1}&q=${encodeURIComponent(q)}&dept=${encodeURIComponent(deptFilter)}&role=${encodeURIComponent(roleFilter)}&manager=${encodeURIComponent(managerFilter)}`}
                   className="text-xs text-[#0f1f3d] hover:underline font-medium">← Prev</Link>
               )}
               {page < totalPages && (
-                <Link href={`/employees?page=${page + 1}&q=${q}&dept=${deptFilter}&role=${roleFilter}`}
+                <Link href={`/employees?page=${page + 1}&q=${encodeURIComponent(q)}&dept=${encodeURIComponent(deptFilter)}&role=${encodeURIComponent(roleFilter)}&manager=${encodeURIComponent(managerFilter)}`}
                   className="text-xs text-[#0f1f3d] hover:underline font-medium">Next →</Link>
               )}
             </div>
