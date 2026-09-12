@@ -11,6 +11,7 @@ import {
   findLatestCycleByPhase,
 } from "@/lib/workflow-counts";
 import { EmployeeDashboard as EmployeeDashboardClient } from "@/components/EmployeeDashboard";
+import { ManagerDashboard as ManagerDashboardClient } from "@/components/ManagerDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -291,6 +292,8 @@ async function ManagerDashboard({ userId, name }: { userId: number; name: string
   const revPct       = revTotal > 0 ? Math.round((revSubmitted / revTotal) * 100) : 0;
   const firstName    = name?.split(" ")[0] ?? "Manager";
 
+  return <ManagerDashboardClient name={name} />;
+
   return (
     <div className="space-y-6">
       {/* Hero */}
@@ -302,9 +305,9 @@ async function ManagerDashboard({ userId, name }: { userId: number; name: string
             <p className="text-blue-300 text-sm font-medium mb-1">Manager Dashboard</p>
             <h1 className="text-2xl font-black tracking-tight">{firstName}</h1>
             <p className="text-blue-200 text-sm mt-1.5">
-              {activeCycle ? `Cycle: ${activeCycle.name}` : "No active cycle"}
+              {activeCycle ? `Cycle: ${activeCycle!.name}` : "No active cycle"}
             </p>
-            {activeCycle && <div className="mt-3"><PhasePill phase={activeCycle.phase} /></div>}
+            {activeCycle && <div className="mt-3"><PhasePill phase={activeCycle!.phase} /></div>}
           </div>
           <div className="text-right hidden sm:block">
             <p className="text-blue-300 text-xs font-medium uppercase tracking-wider">Team size</p>
@@ -312,7 +315,7 @@ async function ManagerDashboard({ userId, name }: { userId: number; name: string
             <p className="text-blue-200 text-xs mt-0.5">direct reports</p>
           </div>
         </div>
-        {activeCycle && <PhaseTimeline phase={activeCycle.phase} />}
+        {activeCycle && <PhaseTimeline phase={activeCycle!.phase} />}
       </div>
 
       {/* Alert banners */}
