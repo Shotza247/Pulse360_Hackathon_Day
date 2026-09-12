@@ -10,6 +10,7 @@ import {
   findLatestActiveCycle,
   findLatestCycleByPhase,
 } from "@/lib/workflow-counts";
+import { EmployeeDashboard as EmployeeDashboardClient } from "@/components/EmployeeDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -435,6 +436,8 @@ async function EmployeeDashboard({ userId, name }: { userId: number; name: strin
   const totalActions = myNominations + myPendingReviews;
   const firstName = name?.split(" ")[0] ?? "there";
 
+  return <EmployeeDashboardClient name={name} />;
+
   return (
     <div className="space-y-6">
       {/* Hero */}
@@ -449,12 +452,12 @@ async function EmployeeDashboard({ userId, name }: { userId: number; name: strin
           <h1 className="text-2xl font-black tracking-tight">Hi, {firstName}</h1>
           <p className={`text-sm mt-1.5 ${totalActions > 0 ? "text-blue-200" : "text-emerald-100"}`}>
             {activeCycle
-              ? `${activeCycle.name} · ${activeCycle.phase} phase`
+              ? `${activeCycle!.name} · ${activeCycle!.phase} phase`
               : "No active review cycle at the moment"}
           </p>
-          {activeCycle && <div className="mt-3"><PhasePill phase={activeCycle.phase} /></div>}
+          {activeCycle && <div className="mt-3"><PhasePill phase={activeCycle!.phase} /></div>}
         </div>
-        {activeCycle && <PhaseTimeline phase={activeCycle.phase} />}
+        {activeCycle && <PhaseTimeline phase={activeCycle!.phase} />}
       </div>
 
       {/* Action banners */}
@@ -507,11 +510,11 @@ async function EmployeeDashboard({ userId, name }: { userId: number; name: strin
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Your Line Manager</p>
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-full bg-[#0f1f3d] text-white flex items-center justify-center text-base font-bold flex-shrink-0">
-                {manager.firstName.charAt(0)}
+                {manager!.firstName.charAt(0)}
               </div>
               <div>
-                <p className="text-base font-bold text-gray-900">{manager.firstName} {manager.lastName}</p>
-                <p className="text-sm text-gray-500">{manager.jobTitle ?? manager.department.name}</p>
+                <p className="text-base font-bold text-gray-900">{manager!.firstName} {manager!.lastName}</p>
+                <p className="text-sm text-gray-500">{manager!.jobTitle ?? manager!.department.name}</p>
                 <p className="text-xs text-gray-400 mt-1">Auto-included as your mandatory reviewer</p>
               </div>
             </div>
