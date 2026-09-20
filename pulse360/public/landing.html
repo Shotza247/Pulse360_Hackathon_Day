@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse360 Homepage Mock</title>
+  <style>
+    :root {
+      --navy: #10213f;
+      --navy-2: #19335d;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #e4e9f0;
+      --paper: #ffffff;
+      --soft: #f5f8fb;
+      --blue: #2d70d8;
+      --teal: #0e9f9a;
+      --amber: #d78b1f;
+      --shadow: 0 22px 60px rgba(16, 33, 63, .13);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--paper); font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    .wrap { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
+    .topbar { background: var(--navy); color: #dce8fb; font-size: 12px; }
+    .topbar .wrap { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; }
+    .topbar strong { color: white; }
+    nav { position: sticky; top: 0; z-index: 10; background: rgba(255,255,255,.94); border-bottom: 1px solid rgba(228,233,240,.9); backdrop-filter: blur(12px); }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; min-height: 72px; gap: 24px; }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; letter-spacing: -.02em; }
+    .brand-mark { width: 35px; height: 35px; display: grid; place-items: center; background: var(--navy); color: white; border-radius: 9px; font-weight: 900; }
+    .brand small { display: block; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+    .nav-links { display: flex; align-items: center; gap: 28px; color: #465267; font-size: 13px; font-weight: 600; }
+    .nav-links a:hover { color: var(--blue); }
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+    .btn { border: 1px solid transparent; border-radius: 7px; padding: 11px 17px; font-weight: 700; font-size: 13px; transition: transform .2s, background .2s, border .2s; }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-ghost { color: var(--navy); border-color: var(--line); background: white; }
+    .btn-primary { color: white; background: var(--blue); box-shadow: 0 7px 16px rgba(45,112,216,.2); }
+    .btn-dark { color: white; background: var(--navy); }
+    .hero { overflow: hidden; background: linear-gradient(180deg, #f7faff 0%, white 90%); border-bottom: 1px solid var(--line); }
+    .hero-grid { display: grid; grid-template-columns: .88fr 1.12fr; gap: 72px; align-items: center; padding: 84px 0 75px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; color: var(--blue); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .eyebrow span { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); }
+    h1 { max-width: 600px; margin: 18px 0 18px; color: var(--navy); font-size: clamp(40px, 5vw, 66px); line-height: 1.02; letter-spacing: -.055em; }
+    .hero-copy { max-width: 510px; color: #536176; font-size: 18px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .microcopy { margin-top: 14px; color: #8290a3; font-size: 12px; }
+    .preview-shell { position: relative; padding: 13px; background: white; border: 1px solid #dbe3ef; border-radius: 12px; box-shadow: var(--shadow); transform: rotate(1deg); }
+    .preview-bar { display: flex; justify-content: space-between; align-items: center; padding: 7px 9px 13px; }
+    .dots { display: flex; gap: 5px; }
+    .dots i { width: 7px; height: 7px; border-radius: 50%; background: #d5deea; }
+    .preview-label { color: #9aa6b5; font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .app-preview { display: grid; grid-template-columns: 128px 1fr; min-height: 335px; overflow: hidden; border: 1px solid #e6ebf2; border-radius: 8px; background: #f7f9fc; }
+    .side-preview { padding: 18px 12px; color: #bdd0ec; background: var(--navy); }
+    .side-logo { display: flex; align-items: center; gap: 6px; margin-bottom: 26px; color: white; font-size: 12px; font-weight: 800; }
+    .side-logo b { display: grid; place-items: center; width: 19px; height: 19px; color: var(--navy); background: white; border-radius: 5px; font-size: 10px; }
+    .side-line { height: 7px; margin: 13px 3px; border-radius: 4px; background: rgba(255,255,255,.12); }
+    .side-line.active { background: #4c83d7; }
+    .content-preview { padding: 20px; }
+    .content-preview h3 { margin: 0 0 4px; color: var(--navy); font-size: 18px; letter-spacing: -.03em; }
+    .content-preview p { margin: 0; color: #8995a6; font-size: 10px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 18px 0; }
+    .stat { padding: 11px; background: white; border: 1px solid #e5ebf2; border-radius: 6px; }
+    .stat label { display: block; color: #99a5b5; font-size: 8px; font-weight: 800; text-transform: uppercase; }
+    .stat strong { display: block; margin-top: 5px; color: var(--navy); font-size: 20px; }
+    .chart-row { display: grid; grid-template-columns: 1.1fr .9fr; gap: 8px; }
+    .chart { min-height: 145px; padding: 12px; background: white; border: 1px solid #e5ebf2; border-radius: 6px; }
+    .chart-title { color: #536176; font-size: 9px; font-weight: 800; }
+    .bars { display: flex; align-items: end; gap: 7px; height: 93px; padding-top: 15px; }
+    .bars i { flex: 1; min-height: 18px; border-radius: 3px 3px 0 0; background: #9bc0f2; }
+    .bars i:nth-child(2), .bars i:nth-child(5) { background: var(--blue); }
+    .bars i:nth-child(3) { height: 75%; background: #73bcb8; }
+    .bars i:nth-child(4) { height: 88%; background: var(--teal); }
+    .donut { display: grid; place-items: center; height: 104px; }
+    .donut-ring { display: grid; place-items: center; width: 74px; height: 74px; border-radius: 50%; background: conic-gradient(var(--blue) 0 42%, var(--teal) 42% 74%, #dfe8f2 74% 100%); }
+    .donut-ring span { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: white; color: var(--navy); font-size: 12px; font-weight: 900; }
+    .section { padding: 82px 0; }
+    .section.soft { background: var(--soft); border-top: 1px solid #edf1f5; border-bottom: 1px solid #edf1f5; }
+    .section-heading { max-width: 650px; margin-bottom: 38px; }
+    .section-heading h2 { margin: 11px 0 10px; color: var(--navy); font-size: 35px; line-height: 1.08; letter-spacing: -.045em; }
+    .section-heading p { margin: 0; color: var(--muted); font-size: 16px; }
+    .value-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .value-item { padding-top: 20px; border-top: 3px solid var(--blue); }
+    .value-item:nth-child(2) { border-color: var(--teal); }
+    .value-item:nth-child(3) { border-color: var(--amber); }
+    .value-item:nth-child(4) { border-color: #7b61c9; }
+    .value-item h3 { margin: 0 0 7px; color: var(--navy); font-size: 16px; }
+    .value-item p { margin: 0; color: var(--muted); font-size: 13px; }
+    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; counter-reset: step; }
+    .step { position: relative; padding-top: 55px; }
+    .step:before { counter-increment: step; content: "0" counter(step); position: absolute; top: 0; left: 0; color: var(--blue); font-size: 26px; font-weight: 900; letter-spacing: -.06em; }
+    .step h3 { margin: 0 0 7px; color: var(--navy); font-size: 16px; }
+    .step p { margin: 0; color: var(--muted); font-size: 13px; }
+    .audience-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .audience-card { padding: 25px; border: 1px solid var(--line); border-radius: 9px; background: white; }
+    .audience-card.stakeholders { border-top: 4px solid var(--navy); }
+    .audience-card.hr { border-top: 4px solid var(--teal); }
+    .audience-card.ops { border-top: 4px solid var(--blue); }
+    .audience-kicker { color: #8793a5; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .audience-card h3 { margin: 8px 0 9px; color: var(--navy); font-size: 20px; letter-spacing: -.03em; }
+    .audience-card > p { min-height: 62px; margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+    .audience-card ul { display: grid; gap: 9px; margin: 0; padding: 17px 0 0; border-top: 1px solid var(--line); list-style: none; color: #536176; font-size: 13px; }
+    .audience-card li:before { content: "•"; display: inline-block; width: 18px; color: var(--teal); font-size: 16px; font-weight: 900; }
+    .audience-value { margin-top: 20px; padding: 12px; border-radius: 6px; color: var(--navy); background: var(--soft); font-size: 12px; font-weight: 700; }
+    .pricing-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 34px; }
+    .billing { display: inline-flex; align-items: center; gap: 8px; color: #657287; font-size: 12px; font-weight: 700; }
+    .billing button { padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--blue); background: white; font-size: 12px; font-weight: 800; }
+    .currency-note { display: block; margin-top: 7px; color: #8b97a8; font-size: 10px; font-weight: 500; }
+    .price-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: stretch; }
+    .price { position: relative; display: flex; flex-direction: column; padding: 27px; border: 1px solid var(--line); border-radius: 9px; background: white; }
+    .price.featured { border: 2px solid var(--blue); box-shadow: 0 14px 30px rgba(45,112,216,.11); }
+    .tag { position: absolute; top: -12px; right: 20px; padding: 4px 9px; border-radius: 999px; color: white; background: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+    .price h3 { margin: 0; color: var(--navy); font-size: 20px; }
+    .price > p { min-height: 44px; margin: 8px 0 20px; color: var(--muted); font-size: 13px; }
+    .amount { color: var(--navy); font-size: 31px; font-weight: 900; letter-spacing: -.05em; }
+    .amount small { color: #8995a6; font-size: 12px; font-weight: 600; letter-spacing: 0; }
+    .price ul { display: grid; gap: 11px; min-height: 145px; margin: 24px 0; padding: 0; list-style: none; color: #566378; font-size: 13px; }
+    .price li:before { content: "✓"; display: inline-block; width: 20px; color: var(--teal); font-weight: 900; }
+    .price .btn { width: 100%; margin-top: auto; text-align: center; }
+    .signup-layout { display: grid; grid-template-columns: .85fr 1.15fr; gap: 42px; align-items: start; }
+    .signup-copy h2 { margin: 11px 0 12px; color: var(--navy); font-size: 35px; line-height: 1.08; letter-spacing: -.045em; }
+    .signup-copy p { max-width: 430px; margin: 0; color: var(--muted); }
+    .signup-points { display: grid; gap: 12px; margin: 28px 0 0; padding: 0; list-style: none; color: #536176; font-size: 13px; }
+    .signup-points li:before { content: "✓"; display: inline-block; width: 22px; color: var(--teal); font-weight: 900; }
+    .signup-form { padding: 27px; border: 1px solid var(--line); border-radius: 9px; background: white; box-shadow: 0 14px 35px rgba(16,33,63,.08); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .field { display: grid; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { color: #536176; font-size: 12px; font-weight: 800; }
+    .field input, .field select { width: 100%; padding: 11px 12px; border: 1px solid #d7dee8; border-radius: 6px; color: var(--ink); background: white; outline: none; font: inherit; font-size: 13px; }
+    .field input:focus, .field select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(45,112,216,.12); }
+    .form-label { display: block; margin: 19px 0 9px; color: #536176; font-size: 12px; font-weight: 800; }
+    .plan-selectors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .plan-option { position: relative; padding: 12px 9px; border: 1px solid #d7dee8; border-radius: 6px; color: #536176; background: white; text-align: left; }
+    .plan-option:hover, .plan-option.selected { border-color: var(--blue); color: var(--navy); background: #f4f8ff; }
+    .plan-option strong, .plan-option small { display: block; }
+    .plan-option strong { font-size: 12px; }
+    .plan-option small { margin-top: 3px; color: #8b97a8; font-size: 10px; }
+    .plan-tip { visibility: hidden; position: absolute; z-index: 3; bottom: calc(100% + 8px); left: 50%; width: 190px; padding: 9px; border-radius: 5px; color: white; background: var(--navy); font-size: 11px; line-height: 1.4; opacity: 0; transform: translateX(-50%) translateY(4px); transition: opacity .15s, transform .15s; pointer-events: none; }
+    .plan-tip:after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; background: var(--navy); transform: translateX(-50%) rotate(45deg); }
+    .plan-option:hover .plan-tip, .plan-option:focus .plan-tip { visibility: visible; opacity: 1; transform: translateX(-50%) translateY(0); }
+    .billing-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .billing-option { position: relative; padding: 11px 12px; border: 1px solid #d7dee8; border-radius: 6px; color: #536176; background: white; text-align: left; }
+    .billing-option:hover, .billing-option.selected { border-color: var(--teal); color: var(--navy); background: #f1fbfa; }
+    .billing-option strong, .billing-option small { display: block; }
+    .billing-option strong { font-size: 12px; }
+    .billing-option small { margin-top: 3px; color: #8b97a8; font-size: 10px; }
+    .signup-form .btn { width: 100%; margin-top: 20px; }
+    .form-note { margin: 11px 0 0; color: #8b97a8; font-size: 11px; text-align: center; }
+    .audience-intro { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .audience-intro article { padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+    .audience-intro h3 { margin: 0 0 7px; color: var(--navy); font-size: 16px; }
+    .audience-intro p { margin: 0; color: var(--muted); font-size: 13px; }
+    .onboarding-steps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+    .onboarding-step { position: relative; padding: 17px 14px; border: 1px solid var(--line); border-radius: 7px; background: white; }
+    .onboarding-step strong { display: block; margin-bottom: 6px; color: var(--navy); font-size: 13px; }
+    .onboarding-step p { margin: 0; color: var(--muted); font-size: 11px; }
+    .onboarding-step span { display: block; margin-bottom: 11px; color: var(--blue); font-size: 10px; font-weight: 900; letter-spacing: .08em; }
+    .faq-list { display: grid; gap: 10px; max-width: 820px; }
+    .faq-list details { padding: 17px 19px; border: 1px solid var(--line); border-radius: 7px; background: white; }
+    .faq-list summary { color: var(--navy); font-size: 14px; font-weight: 800; cursor: pointer; }
+    .faq-list details p { margin: 11px 0 0; color: var(--muted); font-size: 13px; }
+    .privacy-note { max-width: 820px; margin-top: 24px; padding: 15px 18px; border-left: 3px solid var(--teal); color: #536176; background: #f1fbfa; font-size: 13px; }
+    .chatbot-launcher { position: fixed; right: 24px; bottom: 24px; z-index: 10; display: inline-flex; align-items: center; gap: 9px; padding: 13px 16px; border: 0; border-radius: 999px; color: white; background: var(--blue); box-shadow: 0 10px 28px rgba(18, 48, 94, .24); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+    .chatbot-launcher:hover { background: #235fae; }
+    .chatbot-launcher span { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; color: var(--blue); background: white; font-size: 12px; }
+    .chatbot-prompt { position: fixed; right: 24px; bottom: 82px; z-index: 10; display: none; width: min(270px, calc(100vw - 32px)); padding: 13px 36px 13px 14px; border: 1px solid #cbd7e6; border-radius: 8px; color: var(--navy); background: white; box-shadow: 0 12px 30px rgba(18, 48, 94, .16); font-size: 12px; line-height: 1.45; }
+    .chatbot-prompt::after { content: ""; position: absolute; right: 31px; bottom: -6px; width: 11px; height: 11px; border-right: 1px solid #cbd7e6; border-bottom: 1px solid #cbd7e6; background: white; transform: rotate(45deg); }
+    .chatbot-prompt.show { display: block; animation: chatbotPromptIn .2s ease-out; }
+    .chatbot-prompt strong { display: block; margin-bottom: 3px; font-size: 13px; }
+    .chatbot-prompt button { position: absolute; top: 7px; right: 9px; border: 0; color: #7b8798; background: transparent; font-size: 17px; line-height: 1; cursor: pointer; }
+    @keyframes chatbotPromptIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .chatbot-panel { position: fixed; right: 24px; bottom: 82px; z-index: 10; display: none; width: min(360px, calc(100vw - 32px)); overflow: hidden; border: 1px solid #d7dee8; border-radius: 10px; background: white; box-shadow: 0 18px 45px rgba(18, 48, 94, .2); }
+    .chatbot-panel.open { display: block; }
+    .chatbot-header { display: flex; align-items: center; justify-content: space-between; padding: 15px 16px; color: white; background: var(--navy); }
+    .chatbot-header strong { display: block; font-size: 14px; }
+    .chatbot-header small { display: block; margin-top: 3px; color: #b9c9e2; font-size: 11px; }
+    .chatbot-close { border: 0; color: white; background: transparent; font-size: 20px; line-height: 1; cursor: pointer; }
+    .chatbot-messages { display: grid; gap: 10px; max-height: 250px; overflow-y: auto; padding: 14px; background: #f7f9fc; }
+    .chatbot-message { max-width: 90%; padding: 10px 11px; border-radius: 8px; color: #536176; background: white; font-size: 12px; line-height: 1.45; }
+    .chatbot-message.user { justify-self: end; color: white; background: var(--blue); }
+    .chatbot-message.loading { color: #6b7788; font-style: italic; }
+    .chatbot-sources { display: grid; gap: 4px; margin-top: 8px; padding-top: 7px; border-top: 1px solid #e5eaf1; color: #6b7788; font-size: 10px; }
+    .chatbot-source { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chatbot-request-id { margin-top: 5px; color: #8b97a8; font-size: 9px; }
+    .chatbot-suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px 4px; }
+    .chatbot-suggestion { padding: 7px 9px; border: 1px solid #cbd7e6; border-radius: 999px; color: var(--navy); background: white; font: inherit; font-size: 11px; cursor: pointer; }
+    .chatbot-suggestion:hover { border-color: var(--blue); background: #f4f8ff; }
+    .chatbot-form { display: flex; gap: 8px; padding: 10px 14px 14px; background: white; }
+    .chatbot-form input { min-width: 0; flex: 1; padding: 10px; border: 1px solid #d7dee8; border-radius: 6px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
+    .chatbot-form input:focus { border-color: var(--blue); outline: 0; box-shadow: 0 0 0 3px rgba(45,112,216,.12); }
+    .chatbot-form button { padding: 0 13px; border: 0; border-radius: 6px; color: white; background: var(--blue); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .chatbot-form button:disabled { opacity: .6; cursor: wait; }
+    .cta { color: white; background: var(--navy); }
+    .cta .wrap { display: flex; align-items: center; justify-content: space-between; gap: 28px; }
+    .cta h2 { max-width: 600px; margin: 0; font-size: 34px; line-height: 1.1; letter-spacing: -.045em; }
+    .cta p { max-width: 550px; margin: 10px 0 0; color: #b9c9e2; }
+    footer { color: #9daabd; background: #0b1830; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 24px; padding: 28px 0; font-size: 12px; }
+    .mobile-menu { display: none; }
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 45px; padding-top: 60px; }
+      .preview-shell { max-width: 680px; transform: none; }
+      .value-grid, .steps, .audience-grid, .price-grid, .audience-intro { grid-template-columns: repeat(2, 1fr); row-gap: 32px; }
+      .onboarding-steps { grid-template-columns: repeat(3, 1fr); }
+      .signup-layout { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .mobile-menu { display: block; border: 0; background: none; color: var(--navy); font-size: 22px; }
+    }
+    @media (max-width: 620px) {
+      .wrap { width: min(100% - 28px, 1160px); }
+      .topbar .wrap { flex-direction: column; gap: 2px; }
+      .nav-actions .btn-ghost { display: none; }
+      .hero-grid { padding: 48px 0 45px; }
+      h1 { font-size: 44px; }
+      .hero-copy { font-size: 16px; }
+      .section { padding: 58px 0; }
+      .value-grid, .steps, .audience-grid, .price-grid, .plan-selectors, .audience-intro, .onboarding-steps { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .pricing-head, .cta .wrap, footer .wrap { align-items: flex-start; flex-direction: column; }
+      .app-preview { grid-template-columns: 86px 1fr; }
+      .side-preview { padding: 14px 8px; }
+      .content-preview { padding: 13px; }
+      .stat-grid { gap: 5px; }
+      .stat { padding: 8px; }
+      .stat strong { font-size: 16px; }
+      .chart-row { grid-template-columns: 1fr; }
+      .chart:nth-child(2) { display: none; }
+      .audience-card > p { min-height: auto; }
+      .chatbot-launcher { right: 16px; bottom: 16px; }
+      .chatbot-panel { right: 16px; bottom: 74px; }
+      .chatbot-prompt { right: 16px; bottom: 74px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar"><div class="wrap"><span><strong>Pulse360</strong> helps organizations understand, grow, and engage their people.</span><span>Human-approved AI · Privacy-aware analytics</span></div></div>
+  <nav>
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top"><span class="brand-mark">P</span><span>Pulse360<small>Performance Review</small></span></a>
+      <div class="nav-links"><a href="#how">How it works</a><a href="#features">Features</a><a href="#analytics">Analytics</a><a href="#pricing">Pricing</a></div>
+      <div class="nav-actions"><a class="btn btn-ghost" href="/login">Sign in</a><a class="btn btn-primary" href="#pricing">Start free</a><button class="mobile-menu" aria-label="Open menu">☰</button></div>
+    </div>
+  </nav>
+
+  <main id="top">
+    <section class="hero"><div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow"><span></span>360° performance, made practical</div>
+        <h1>Make every review conversation count.</h1>
+        <p class="hero-copy">Pulse360 helps organizations make better hiring and development decisions, improve employee performance, recognize contributions, and maximize skills across every initiative.</p>
+        <div class="hero-actions"><a class="btn btn-primary" href="#signup">Start free for your team</a><a class="btn btn-ghost" href="#how">See how it works</a></div>
+        <p class="microcopy">Up to 59 employees · No credit card required for the free package</p>
+      </div>
+      <div class="preview-shell" aria-label="Pulse360 product preview">
+        <div class="preview-bar"><div class="dots"><i></i><i></i><i></i></div><span class="preview-label">Live people insight</span></div>
+        <div class="app-preview"><aside class="side-preview"><div class="side-logo"><b>P</b> Pulse360</div><div class="side-line active"></div><div class="side-line"></div><div class="side-line"></div><div class="side-line"></div><div class="side-line"></div></aside><div class="content-preview"><h3>People overview</h3><p>Q2 End-of-Quarter Cycle · HR Admin</p><div class="stat-grid"><div class="stat"><label>Participation</label><strong>86%</strong></div><div class="stat"><label>Reviews done</label><strong>42</strong></div><div class="stat"><label>Pending</label><strong>07</strong></div></div><div class="chart-row"><div class="chart"><div class="chart-title">Review completion</div><div class="bars"><i style="height:38%"></i><i style="height:58%"></i><i></i><i></i><i style="height:67%"></i><i style="height:80%"></i></div></div><div class="chart"><div class="chart-title">Team coverage</div><div class="donut"><div class="donut-ring"><span>86%</span></div></div></div></div></div></div>
+      </div>
+    </div></section>
+
+    <section class="section"><div class="wrap"><div class="section-heading"><div class="eyebrow"><span></span>One platform, clear ownership</div><h2>See contribution. Strengthen performance. Grow capability.</h2><p>Pulse360 gives HR, Operations, managers, and stakeholders the right view of people and performance, while keeping sensitive feedback protected.</p></div><div class="value-grid" id="features"><article class="value-item"><h3>Hire with insight</h3><p>Build a clearer understanding of capability, role fit, and development needs across the organization.</p></article><article class="value-item"><h3>Recognize contribution</h3><p>Make meaningful employee contributions visible across teams, projects, and business initiatives.</p></article><article class="value-item"><h3>Improve performance</h3><p>Turn structured feedback into focused conversations, practical goals, and measurable growth.</p></article><article class="value-item"><h3>Maximize skills</h3><p>Understand where people excel and connect their strengths to future initiatives and opportunities.</p></article></div></div></section>
+
+    <section class="section soft"><div class="wrap"><div class="section-heading"><div class="eyebrow"><span></span>Built for the people who move work forward</div><h2>One platform, four useful perspectives.</h2><p>Pulse360 connects the people who shape talent, performance, and organizational execution.</p></div><div class="audience-intro"><article><h3>HR teams</h3><p>Run fair, structured review cycles and turn feedback into development and retention action.</p></article><article><h3>Operations teams</h3><p>Monitor adoption, workflow health, manager accountability, and improvement opportunities.</p></article><article><h3>People managers</h3><p>Approve nominations, understand team progress, and support meaningful performance conversations.</p></article><article><h3>Stakeholders</h3><p>See the high-level workforce and platform signals needed for better organizational decisions.</p></article></div></div></section>
+
+    <section class="section soft" id="how"><div class="wrap"><div class="section-heading"><div class="eyebrow"><span></span>A calmer review workflow</div><h2>Simple for employees. Useful for HR and Operations.</h2></div><div class="steps"><article class="step"><h3>Set up the cycle</h3><p>HR and Operations define the period, criteria, questions, and review rules.</p></article><article class="step"><h3>Nominate peers</h3><p>Employees suggest reviewers with clear department-aware workflows.</p></article><article class="step"><h3>Approve and review</h3><p>Line managers approve their teams’ nominations and employees give structured feedback.</p></article><article class="step"><h3>Turn insight into action</h3><p>HR and Operations use results, reports, and development plans to move forward.</p></article></div></div></section>
+
+    <section class="section" id="analytics"><div class="wrap"><div class="section-heading"><div class="eyebrow"><span></span>Insight by audience</div><h2>Different teams. Different decisions. One shared view.</h2><p>Pulse360 separates analytics by purpose so every stakeholder sees information that helps them act on capability, contribution, adoption, and growth.</p></div><div class="audience-grid"><article class="audience-card stakeholders"><div class="audience-kicker">Leadership and stakeholders</div><h3>Business health</h3><p>A concise view of workforce capability, contribution, platform adoption, and organizational momentum.</p><ul><li>Participation and completion trends</li><li>Department-level engagement patterns</li><li>High-level talent and retention signals</li><li>Skills aligned to strategic initiatives</li></ul><div class="audience-value">Value: make informed hiring, growth, investment, and internal-tool decisions without exposing individual review content.</div></article><article class="audience-card hr"><div class="audience-kicker">HR department</div><h3>People and talent insight</h3><p>HR gets the deeper organizational context needed to improve hiring, performance, fairness, development, and retention.</p><ul><li>Competency and performance patterns</li><li>Demographic and inclusion reporting</li><li>Talent development and promotion signals</li><li>Employee contribution recognition</li></ul><div class="audience-value">Value: place the right skills in the right opportunities and build stronger people practices.</div></article><article class="audience-card ops"><div class="audience-kicker">Operations department</div><h3>Workflow and adoption health</h3><p>Operations sees whether teams are adopting Pulse360, where workflows slow down, and which internal initiatives need attention.</p><ul><li>Platform usage and adoption trends</li><li>Approval bottlenecks and overdue actions</li><li>Manager workload and team coverage</li><li>Feedback to improve internal tools and initiatives</li></ul><div class="audience-value">Value: improve platform adoption, remove process friction, and make internal operations more effective.</div></article></div></div></section>
+
+    <section class="section" id="pricing"><div class="wrap"><div class="pricing-head"><div class="section-heading" style="margin:0"><div class="eyebrow"><span></span>Plans that grow with you</div><h2>Start small. Build momentum.</h2><p>Choose the level of structure and insight your organization needs today.</p></div><div class="billing"><span>Choose billing period</span><button type="button" id="billingToggle">Monthly</button><small class="currency-note" id="currencyNote">Prices shown in USD</small></div></div><div class="price-grid"><article class="price"><h3>Free</h3><p>For small teams ready to make feedback a habit.</p><div class="amount" id="freePrice">$0 <small>forever</small></div><ul><li>Up to 59 employees</li><li>Core review cycles</li><li>Nominations and approvals</li><li>Basic results and reports</li></ul><a class="btn btn-ghost" href="#signup">Start free</a></article><article class="price featured"><span class="tag">Most useful</span><h3>Basic</h3><p>For growing teams that want deeper HR visibility.</p><div class="amount"><span id="basicPrice">$49</span> <small id="basicCadence">/ month</small></div><ul><li>Up to 149 employees</li><li>Historical analytics</li><li>PDF reports and exports</li><li>Advanced AI add-ons</li></ul><a class="btn btn-primary" href="#signup">Choose Basic</a></article><article class="price"><h3>Premium</h3><p>For established teams that need richer insight and control.</p><div class="amount"><span id="premiumPrice">$99</span> <small id="premiumCadence">/ month</small></div><ul><li>Up to 499 employees</li><li>Advanced HR and Ops analytics</li><li>Expanded AI and reporting</li><li>Priority support</li></ul><a class="btn btn-ghost" href="#signup">Choose Premium</a></article><article class="price"><h3>Enterprise</h3><p>For organizations that need scale, support, and control.</p><div class="amount">Let&apos;s talk</div><ul><li>500+ employees</li><li>Custom integrations</li><li>Governance and support</li><li>Implementation guidance</li></ul><a class="btn btn-dark" href="#signup">Contact us</a></article></div></div></section>
+
+    <section class="section soft" id="signup"><div class="wrap signup-layout"><div class="signup-copy"><div class="eyebrow"><span></span>Company onboarding</div><h2>Bring your organization into the conversation.</h2><p>Tell us about your company and select a team size. Pulse360 recommends the right plan automatically, so you can explore the best starting point before guided onboarding.</p><ul class="signup-points"><li>Plan is selected by employee count</li><li>Compare monthly and annual billing</li><li>Designed for HR-led rollout</li><li>Start with a guided review cycle</li></ul></div><form class="signup-form" onsubmit="return false"><div class="form-grid"><div class="field"><label for="companyName">Company name</label><input id="companyName" type="text" placeholder="e.g. Pulse Technologies"></div><div class="field"><label for="workEmail">Work email</label><input id="workEmail" type="email" placeholder="you@company.com"></div><div class="field full"><label for="employeeCount">Number of employees</label><select id="employeeCount"><option value="">Select a range</option><option value="free">1–59 employees</option><option value="basic">60–149 employees</option><option value="premium">150–499 employees</option><option value="enterprise">500+ employees</option></select></div></div><span class="form-label">Recommended plan</span><div class="plan-selectors"><button type="button" class="plan-option" data-plan="Free"><strong>Free</strong><small>Up to 59 employees</small><span class="plan-tip">Core cycles, nominations, approvals, and basic reporting.</span></button><button type="button" class="plan-option" data-plan="Basic"><strong>Basic</strong><small>Up to 149 employees</small><span class="plan-tip">Historical analytics, exports, and advanced AI add-ons.</span></button><button type="button" class="plan-option" data-plan="Premium"><strong>Premium</strong><small>Up to 499 employees</small><span class="plan-tip">Advanced HR and Operations analytics with priority support.</span></button><button type="button" class="plan-option" data-plan="Enterprise"><strong>Enterprise</strong><small>500+ employees</small><span class="plan-tip">Custom integrations, governance, support, and implementation guidance.</span></button></div><div class="audience-value" id="signupSummary">Select your employee count to see the recommended plan and pricing.</div><span class="form-label">Billing preference</span><div class="billing-options"><button type="button" class="billing-option selected" data-billing="Monthly"><strong>Monthly</strong><small>Flexible month-to-month billing</small></button><button type="button" class="billing-option" data-billing="Annual"><strong>Annual</strong><small>Lower effective monthly rate</small></button></div><button class="btn btn-primary" type="submit" id="signupButton">Choose your employee range</button><p class="form-note" id="signupNote">Plan exploration is available now; account onboarding and payment are completed with our team.</p></form></div></section>
+
+    <section class="section"><div class="wrap"><div class="section-heading"><div class="eyebrow"><span></span>What happens after signup</div><h2>From workspace creation to your first useful cycle.</h2><p>Give HR a guided path from organization setup to adoption, without asking them to configure everything at once.</p></div><div class="onboarding-steps"><article class="onboarding-step"><span>01</span><strong>Create workspace</strong><p>Register the organization and owner account.</p></article><article class="onboarding-step"><span>02</span><strong>Verify email</strong><p>Confirm the work email and secure access.</p></article><article class="onboarding-step"><span>03</span><strong>Import employees</strong><p>Bulk import an approved employee CSV or add people manually.</p></article><article class="onboarding-step"><span>04</span><strong>Map organization</strong><p>Review departments, roles, grades, and managers.</p></article><article class="onboarding-step"><span>05</span><strong>Invite teams</strong><p>Invite HR, Operations, managers, and employees.</p></article><article class="onboarding-step"><span>06</span><strong>Launch cycle</strong><p>Create the first review cycle and monitor adoption.</p></article></div></div></section>
+
+  <section class="section cta"><div class="wrap"><div><h2>Turn people insight into organizational momentum.</h2><p>Give HR, Operations, managers, and employees a review experience that recognizes contribution, improves performance, and connects skills to growth.</p></div><a class="btn" style="background:white;color:var(--navy)" href="#signup">Explore plans</a></div></section>
+  </main>
+  <footer><div class="wrap"><span>© 2026 Pulse360</span><span>Performance reviews · People insight · Growth planning</span></div></footer>
+  <div class="chatbot-prompt" id="chatbotPrompt" role="status"><button id="chatbotPromptClose" type="button" aria-label="Dismiss chatbot message">×</button><strong>Need a quick answer?</strong>Ask Pulse360 about plans, bulk import, HR and Operations views, or privacy.</div>
+  <button class="chatbot-launcher" id="chatbotLauncher" type="button" aria-expanded="false" aria-controls="chatbotPanel"><span>?</span>Ask Pulse360</button>
+  <section class="chatbot-panel" id="chatbotPanel" aria-label="Pulse360 FAQ assistant">
+    <div class="chatbot-header"><div><strong>Pulse360 assistant</strong><small>FAQ help for the Pulse360 platform</small></div><button class="chatbot-close" id="chatbotClose" type="button" aria-label="Close assistant">×</button></div>
+    <div class="chatbot-messages" id="chatbotMessages" aria-live="polite"><div class="chatbot-message">Hi. I can answer a few questions about plans, bulk import, audiences, and privacy.</div></div>
+    <div class="chatbot-suggestions"><button class="chatbot-suggestion" type="button" data-question="Is the free plan really free?">Free plan</button><button class="chatbot-suggestion" type="button" data-question="Can we import employees in bulk?">Bulk import</button><button class="chatbot-suggestion" type="button" data-question="Can HR and Operations use different views?">HR and Ops</button><button class="chatbot-suggestion" type="button" data-question="How is data protected?">Privacy</button></div>
+    <form class="chatbot-form" id="chatbotForm"><input id="chatbotInput" type="text" placeholder="Ask a homepage question..." autocomplete="off" aria-label="Ask a question"><button type="submit">Send</button></form>
+  </section>
+  <script>
+    const toggle = document.getElementById('billingToggle');
+    const pricingRegion = document.getElementById('currencyNote');
+    const pricingRegions = {
+      zar: { currency: 'ZAR', locale: 'en-ZA', label: 'South Africa', usdRate: 18 },
+      eur: { currency: 'EUR', locale: 'en-IE', label: 'Europe', usdRate: 0.92 },
+      gbp: { currency: 'GBP', locale: 'en-GB', label: 'United Kingdom', usdRate: 0.79 },
+      aud: { currency: 'AUD', locale: 'en-AU', label: 'Australia', usdRate: 1.52 },
+      cad: { currency: 'CAD', locale: 'en-CA', label: 'Canada', usdRate: 1.36 },
+      usd: { currency: 'USD', locale: 'en-US', label: 'United States / default', usdRate: 1 }
+    };
+    function detectPricingRegion() {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      if (timezone === 'Africa/Johannesburg' || timezone.startsWith('Africa/')) return pricingRegions.zar;
+      if (timezone.startsWith('Europe/London')) return pricingRegions.gbp;
+      if (timezone.startsWith('Europe/')) return pricingRegions.eur;
+      if (timezone.startsWith('Australia/')) return pricingRegions.aud;
+      if (timezone.startsWith('America/Toronto') || timezone.startsWith('America/Vancouver')) return pricingRegions.cad;
+      return pricingRegions.usd;
+    }
+    const detectedRegion = detectPricingRegion();
+    let publicBilling = 'Monthly';
+    const money = (usdAmount) => new Intl.NumberFormat(detectedRegion.locale, { style: 'currency', currency: detectedRegion.currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(usdAmount * detectedRegion.usdRate);
+    function annualUsd(monthlyUsd) { return monthlyUsd * 12 * 0.85; }
+    function renderPublicPricing() {
+      const annual = publicBilling === 'Annual';
+      document.getElementById('freePrice').innerHTML = `${money(0)} <small>forever</small>`;
+      document.getElementById('basicPrice').textContent = money(annual ? annualUsd(49) : 49);
+      document.getElementById('basicCadence').textContent = annual ? '/ year' : '/ month';
+      document.getElementById('premiumPrice').textContent = money(annual ? annualUsd(99) : 99);
+      document.getElementById('premiumCadence').textContent = annual ? '/ year' : '/ month';
+      pricingRegion.textContent = `Prices shown in ${detectedRegion.currency} · ${detectedRegion.label} · annual billing is 15% off`;
+    }
+    toggle.addEventListener('click', () => {
+      publicBilling = publicBilling === 'Monthly' ? 'Annual' : 'Monthly';
+      toggle.textContent = publicBilling;
+      renderPublicPricing();
+    });
+    renderPublicPricing();
+    let selectedPlan = '';
+    let selectedBilling = 'Monthly';
+    const signupButton = document.getElementById('signupButton');
+    const signupSummary = document.getElementById('signupSummary');
+    const planDetails = {
+      Free: { range: 'Up to 59 employees', monthlyUsd: 0, annualUsd: 0 },
+      Basic: { range: 'Up to 149 employees', monthlyUsd: 49, annualUsd: annualUsd(49) },
+      Premium: { range: 'Up to 499 employees', monthlyUsd: 99, annualUsd: annualUsd(99) },
+      Enterprise: { range: '500+ employees', monthlyUsd: null, annualUsd: null }
+    };
+    const planForRange = { free: 'Free', basic: 'Basic', premium: 'Premium', enterprise: 'Enterprise' };
+    function updateSignupPlan() {
+      const details = planDetails[selectedPlan];
+      if (!details) return;
+      document.querySelectorAll('.plan-option').forEach((item) => item.classList.toggle('selected', item.dataset.plan === selectedPlan));
+      const price = selectedPlan === 'Enterprise' ? 'Let\'s talk' : money(selectedBilling === 'Annual' ? details.annualUsd : details.monthlyUsd);
+      const cadence = selectedPlan === 'Free' ? 'forever' : selectedPlan === 'Enterprise' ? 'custom pricing' : selectedBilling === 'Annual' ? '/ year' : '/ month';
+      signupSummary.textContent = `${selectedPlan} · ${details.range} · ${price} ${cadence}`;
+      signupButton.textContent = selectedPlan === 'Enterprise' ? 'Contact us about Enterprise' : `Continue with ${selectedPlan}`;
+    }
+    document.getElementById('employeeCount').addEventListener('change', (event) => {
+      selectedPlan = planForRange[event.target.value] || '';
+      if (selectedPlan) updateSignupPlan();
+      else {
+        signupSummary.textContent = 'Select your employee count to see the recommended plan and pricing.';
+        signupButton.textContent = 'Choose your employee range';
+        document.querySelectorAll('.plan-option').forEach((item) => item.classList.remove('selected'));
+      }
+    });
+    document.querySelectorAll('.plan-option').forEach((button) => button.addEventListener('click', () => {
+      if (!selectedPlan) return;
+      const rangeForPlan = { Free: 'free', Basic: 'basic', Premium: 'premium', Enterprise: 'enterprise' };
+      document.getElementById('employeeCount').value = rangeForPlan[button.dataset.plan];
+      selectedPlan = button.dataset.plan;
+      updateSignupPlan();
+    }));
+    document.querySelectorAll('.billing-option').forEach((button) => button.addEventListener('click', () => {
+      document.querySelectorAll('.billing-option').forEach((item) => item.classList.remove('selected'));
+      button.classList.add('selected');
+      selectedBilling = button.dataset.billing;
+      document.getElementById('signupNote').textContent = `${selectedPlan || 'Choose a plan'} · ${selectedBilling} billing · No payment is connected in this mock.`;
+      if (selectedPlan) updateSignupPlan();
+    }));
+
+    const chatbotLauncher = document.getElementById('chatbotLauncher');
+    const chatbotPrompt = document.getElementById('chatbotPrompt');
+    const chatbotPromptClose = document.getElementById('chatbotPromptClose');
+    const chatbotPanel = document.getElementById('chatbotPanel');
+    const chatbotClose = document.getElementById('chatbotClose');
+    const chatbotMessages = document.getElementById('chatbotMessages');
+    const chatbotForm = document.getElementById('chatbotForm');
+    const chatbotInput = document.getElementById('chatbotInput');
+    const chatbotSend = chatbotForm.querySelector('button[type="submit"]');
+    const RAG_API_ENDPOINT = 'http://127.0.0.1:8767/ask';
+    const RAG_COLLECTION_ID = 'pulse360_faq';
+    async function askPulse360(question) {
+      const response = await fetch(RAG_API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, collection_id: RAG_COLLECTION_ID })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const detail = data.detail;
+        throw new Error(typeof detail === 'string' ? detail : detail?.message || `Request failed (${response.status})`);
+      }
+      return data;
+    }
+    function addChatbotMessage(text, isUser, details = {}) {
+      const message = document.createElement('div');
+      message.className = `chatbot-message${isUser ? ' user' : ''}`;
+      message.textContent = text;
+      if (details.sources?.length) {
+        const sources = document.createElement('div');
+        sources.className = 'chatbot-sources';
+        const label = document.createElement('strong');
+        label.textContent = 'Sources';
+        sources.appendChild(label);
+        details.sources.slice(0, 3).forEach((source) => {
+          const item = document.createElement('div');
+          item.className = 'chatbot-source';
+          item.textContent = source.title || source.document_title || source.document_id || source.name || 'Pulse360 FAQ';
+          sources.appendChild(item);
+        });
+        message.appendChild(sources);
+      }
+      if (details.requestId) {
+        const requestId = document.createElement('div');
+        requestId.className = 'chatbot-request-id';
+        requestId.textContent = `Request: ${details.requestId}`;
+        message.appendChild(requestId);
+      }
+      chatbotMessages.appendChild(message);
+      chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    }
+    async function answerQuestion(question) {
+      const loading = document.createElement('div');
+      loading.className = 'chatbot-message loading';
+      loading.textContent = 'Searching the Pulse360 FAQ...';
+      chatbotMessages.appendChild(loading);
+      chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+      try {
+        const result = await askPulse360(question);
+        loading.remove();
+        addChatbotMessage(result.answer || 'The FAQ API returned no answer for this question.', false, {
+          sources: Array.isArray(result.sources) ? result.sources : [],
+          requestId: result.request_id
+        });
+      } catch (error) {
+        loading.remove();
+        addChatbotMessage(`Pulse360 FAQ API error: ${error.message}`, false);
+      } finally {
+        chatbotSend.disabled = false;
+        chatbotInput.disabled = false;
+        chatbotForm.removeAttribute('aria-busy');
+      }
+    }
+    function openChatbot() {
+      chatbotPanel.classList.add('open');
+      chatbotPrompt.classList.remove('show');
+      chatbotLauncher.setAttribute('aria-expanded', 'true');
+      chatbotInput.focus();
+    }
+    chatbotLauncher.addEventListener('click', () => chatbotPanel.classList.contains('open') ? chatbotClose.click() : openChatbot());
+    chatbotClose.addEventListener('click', () => { chatbotPanel.classList.remove('open'); chatbotLauncher.setAttribute('aria-expanded', 'false'); });
+    chatbotPromptClose.addEventListener('click', () => chatbotPrompt.classList.remove('show'));
+    window.setTimeout(() => {
+      if (chatbotPanel.classList.contains('open')) return;
+      chatbotPrompt.classList.add('show');
+      window.setTimeout(() => chatbotPrompt.classList.remove('show'), 7000);
+    }, 1800);
+    chatbotForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const question = chatbotInput.value.trim();
+      if (!question) return;
+      addChatbotMessage(question, true);
+      chatbotInput.value = '';
+      chatbotSend.disabled = true;
+      chatbotInput.disabled = true;
+      chatbotForm.setAttribute('aria-busy', 'true');
+      void answerQuestion(question);
+    });
+    document.querySelectorAll('.chatbot-suggestion').forEach((button) => button.addEventListener('click', () => {
+      openChatbot();
+      addChatbotMessage(button.dataset.question, true);
+      chatbotSend.disabled = true;
+      chatbotInput.disabled = true;
+      chatbotForm.setAttribute('aria-busy', 'true');
+      void answerQuestion(button.dataset.question);
+    }));
+  </script>
+</body>
+</html>
