@@ -33,7 +33,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0f1f3d]">
+    <div className="relative min-h-screen flex items-center justify-center bg-[#0f1f3d] px-4 py-10">
+      <a
+        href="/"
+        aria-label="Back to Pulse360 homepage"
+        className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-blue-100 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/60"
+      >
+        <span aria-hidden="true" className="text-xl leading-none">←</span>
+        <span>Back</span>
+      </a>
       <div className="w-full max-w-md">
         {/* Logo / Brand */}
         <div className="text-center mb-8">
@@ -98,9 +106,15 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-xs text-gray-400">
-            Powered by IBM Bob · Hackathon V2
-          </p>
+          <div className="mt-7 border-t border-gray-100 pt-5 text-center">
+            <a
+              href="/"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-[#0f1f3d] transition hover:border-[#0f1f3d] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0f1f3d]/20"
+            >
+              <span aria-hidden="true">←</span>
+              Return to homepage
+            </a>
+          </div>
         </div>
       </div>
     </div>
