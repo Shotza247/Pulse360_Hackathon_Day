@@ -129,3 +129,27 @@
   - The earlier `P1001` direct-host failure and `ENOTFOUND` retired Render-host failure are resolved.
 - Follow-up:
   - Perform the application smoke test: login, dashboard reads, approval/review counter refresh, one safe write, audit-event creation, report generation, and downloads.
+
+## 2026-09-23 - Landing Page Root Route Deployed
+
+- Status: passed
+- Goal: Make the Pulse360 landing page the public application entry point without requiring `/landing.html`.
+- Scope: Next.js root route, landing-page integration, login navigation, Render deployment, and `main` branch delivery.
+- Evidence:
+  - Homepage integration was committed in `7846ff1`.
+  - Landing-page and login navigation changes were merged through PR #61 in `14af410`.
+  - The final root homepage update was committed as `ca84ce0` (`HomePage url update`).
+  - `origin/main` points to `ca84ce0`.
+  - Render deployment completed successfully.
+  - The production root URL is available at `https://pulse360-gkt8.onrender.com/`.
+- Changes:
+  - The Next.js root page renders the landing experience.
+  - Removed the public dependency on `/landing.html` routing.
+  - Retained the landing HTML asset as an internal implementation detail of the root page.
+  - Kept `/login` as the authentication entry point with navigation back to the homepage.
+- Verification:
+  - Root production URL displays the landing page.
+  - `/landing.html` is not required for public navigation.
+  - Render is serving the deployed `main` branch version.
+- Decision:
+  - Treat the landing-page integration as complete and begin the next implementation gate: Supabase `pgvector` schema, FAQ ingestion, and the Vercel `/ask` service.

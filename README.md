@@ -25,6 +25,7 @@
 15. [Human-in-the-Loop Log](#human-in-the-loop-log)
 16. [IBM Bob — Agentic AI Platform Notes](#ibm-bob--agentic-ai-platform-notes)
 17. [Useful Commands](#useful-commands)
+18. [Current Deployment Status](#current-deployment-status)
 
 ---
 
@@ -92,11 +93,41 @@ BigQuery is a future analytics-warehouse option, not part of the live transactio
 
 Production URL: **https://pulse360-gkt8.onrender.com**
 
+### Public entry point
+
+The deployed root URL is the canonical Pulse360 entry point:
+
+**https://pulse360-gkt8.onrender.com/**
+
+The landing page is rendered from the root route, so users do not need to visit
+`/landing.html`. The HTML asset remains an internal implementation detail used
+by the Next.js root page and is not the public navigation contract.
+
 Architecture requirements and non-functional requirements are maintained in [3. Architecture Requirements.md](3.%20Architecture%20Requirements.md).
 
 The full Mermaid architecture, event analytics, and review-cycle diagrams are maintained in [3. Architecture Requirements.md](3.%20Architecture%20Requirements.md).
 
 > **Blueprint note:** The live Render service uses Supabase through manually supplied `DATABASE_URL` and `DIRECT_URL` values. The Blueprint no longer sources `DATABASE_URL` from the retired Render Postgres resource or declares that database as a managed production dependency.
+
+## Current Deployment Status
+
+The landing-page integration is complete and deployed on the `main` branch.
+
+Verified repository history:
+
+- Homepage integration completed in `7846ff1`.
+- Landing-page and login navigation updates merged through PR #61 in `14af410`.
+- The final root homepage route update was committed as `ca84ce0` (`HomePage url update`).
+- `origin/main` currently points to `ca84ce0`.
+
+Verified production behavior:
+
+- Render build and deployment completed successfully.
+- `https://pulse360-gkt8.onrender.com/` displays the Pulse360 landing page.
+- The root URL is the public homepage entry point; users do not need to append `/landing.html`.
+- The login route remains available at `https://pulse360-gkt8.onrender.com/login`.
+
+This completes the first gate in the RAG implementation plan. The next phase can begin with the Supabase `pgvector` schema and FAQ ingestion work.
 
 ---
 
