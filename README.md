@@ -129,6 +129,20 @@ Verified production behavior:
 
 This completes the first gate in the RAG implementation plan. The next phase can begin with the Supabase `pgvector` schema and FAQ ingestion work.
 
+### FAQ Assistant RAG Progress
+
+The Supabase vector foundation is now prepared:
+
+- Supabase `pgvector` extension enabled, version `0.8.2`.
+- Private `rag` schema created.
+- `rag.collections`, `rag.documents`, and `rag.document_chunks` created.
+- Initial `pulse360_faq` collection registered.
+- `rag.match_document_chunks` retrieval function created for committed FAQ chunks.
+
+The approved FAQ document has not yet been imported or embedded. The next RAG milestone is to parse the document, create its chunks, generate 384-dimensional embeddings, insert them into `rag.document_chunks`, and verify category-filtered retrieval before connecting the Vercel `/ask` endpoint.
+
+The `rag.match_document_chunks` database function is the current retrieval boundary. It accepts a 384-dimensional question embedding, restricts searches to committed documents in `pulse360_faq`, optionally filters by category, applies a minimum similarity threshold of `0.35`, and returns the six highest-ranked chunks with citation metadata by default. Supabase `pgvector` supplies similarity ranking; it does not provide a semantic reranker. A reranker will remain deferred until baseline retrieval quality has been measured.
+
 ---
 
 ## Team

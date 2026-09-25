@@ -153,3 +153,46 @@
   - Render is serving the deployed `main` branch version.
 - Decision:
   - Treat the landing-page integration as complete and begin the next implementation gate: Supabase `pgvector` schema, FAQ ingestion, and the Vercel `/ask` service.
+
+## 2026-09-25 - Supabase pgvector Foundation Created
+
+- Status: in progress
+- Goal: Prepare the Supabase vector database for the Pulse360 FAQ Assistant.
+- Scope: Supabase extension, private RAG schema, FAQ collection metadata, document/chunk storage, and similarity retrieval.
+- Evidence:
+  - Supabase `pgvector` extension is enabled at version `0.8.2`.
+  - The private `rag` schema was created successfully.
+  - `rag.collections`, `rag.documents`, and `rag.document_chunks` were created successfully.
+  - The initial `pulse360_faq` collection was registered.
+  - The `rag.match_document_chunks` function was created for cosine-similarity retrieval over committed 384-dimensional embeddings.
+- Decisions:
+  - Keep FAQ data isolated from Pulse360 employee, review, and audit tables.
+  - Search only documents with `status = 'COMMITTED'`.
+  - Use category metadata for topics such as pricing, privacy, security, onboarding, and analytics.
+- Not yet completed:
+  - The approved FAQ document has not yet been uploaded to Supabase Storage or registered in `rag.documents`.
+  - FAQ text has not yet been chunked or embedded.
+  - No rows have yet been inserted into `rag.document_chunks`.
+  - The Vercel `/ask` endpoint has not yet been connected to pgvector.
+- Next step:
+  - Import the approved FAQ document, generate embeddings using the configured 384-dimensional embedding model, insert the chunks, mark the document `COMMITTED`, and verify retrieval by category.
+
+## 2026-09-25 - pgvector Retrieval Function and Reranker Decision
+
+- Status: passed
+- Goal: Confirm the purpose and boundary of the Supabase vector retrieval function before importing FAQ content.
+- Scope: `rag.match_document_chunks`, pgvector similarity search, FAQ category filtering, and retrieval ranking strategy.
+- Evidence:
+  - The function accepts a `extensions.vector(384)` question embedding.
+  - It searches the requested collection and only returns documents with `status = 'COMMITTED'`.
+  - It supports optional category filtering, a `0.35` minimum similarity threshold, and a default top-six result limit.
+  - It returns chunk content and source metadata required for answer citations.
+- Decision:
+  - Use Supabase `pgvector` as the initial retrieval ranker.
+  - Do not add a semantic reranker yet. Supabase/pgvector provides nearest-neighbor similarity ranking, not a separate cross-encoder reranker.
+  - Revisit reranking after importing representative FAQ content and measuring retrieval quality.
+- Verification:
+  - The retrieval function was created successfully in Supabase.
+  - Retrieval result testing is pending until committed FAQ embeddings exist.
+- Follow-up:
+  - Upload and register the approved FAQ document, generate 384-dimensional embeddings, insert committed chunks, then run category-specific retrieval tests.
