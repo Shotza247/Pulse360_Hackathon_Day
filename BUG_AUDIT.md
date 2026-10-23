@@ -129,3 +129,92 @@
   - The earlier `P1001` direct-host failure and `ENOTFOUND` retired Render-host failure are resolved.
 - Follow-up:
   - Perform the application smoke test: login, dashboard reads, approval/review counter refresh, one safe write, audit-event creation, report generation, and downloads.
+
+## 2026-09-23 - Landing Page Root Route Deployed
+
+- Status: passed
+- Goal: Make the Pulse360 landing page the public application entry point without requiring `/landing.html`.
+- Scope: Next.js root route, landing-page integration, login navigation, Render deployment, and `main` branch delivery.
+- Evidence:
+  - Homepage integration was committed in `7846ff1`.
+  - Landing-page and login navigation changes were merged through PR #61 in `14af410`.
+  - The final root homepage update was committed as `ca84ce0` (`HomePage url update`).
+  - `origin/main` points to `ca84ce0`.
+  - Render deployment completed successfully.
+  - The production root URL is available at `https://pulse360-gkt8.onrender.com/`.
+- Changes:
+  - The Next.js root page renders the landing experience.
+  - Removed the public dependency on `/landing.html` routing.
+  - Retained the landing HTML asset as an internal implementation detail of the root page.
+  - Kept `/login` as the authentication entry point with navigation back to the homepage.
+- Verification:
+  - Root production URL displays the landing page.
+  - `/landing.html` is not required for public navigation.
+  - Render is serving the deployed `main` branch version.
+- Decision:
+  - Treat the landing-page integration as complete and begin the next implementation gate: Supabase `pgvector` schema, FAQ ingestion, and the Vercel `/ask` service.
+
+## 2026-09-25 - Supabase pgvector Foundation Created
+
+- Status: in progress
+- Goal: Prepare the Supabase vector database for the Pulse360 FAQ Assistant.
+- Scope: Supabase extension, private RAG schema, FAQ collection metadata, document/chunk storage, and similarity retrieval.
+- Evidence:
+  - Supabase `pgvector` extension is enabled at version `0.8.2`.
+  - The private `rag` schema was created successfully.
+  - `rag.collections`, `rag.documents`, and `rag.document_chunks` were created successfully.
+  - The initial `pulse360_faq` collection was registered.
+  - The `rag.match_document_chunks` function was created for cosine-similarity retrieval over committed 384-dimensional embeddings.
+- Decisions:
+  - Keep FAQ data isolated from Pulse360 employee, review, and audit tables.
+  - Search only documents with `status = 'COMMITTED'`.
+  - Use category metadata for topics such as pricing, privacy, security, onboarding, and analytics.
+- Not yet completed:
+  - The approved FAQ document has not yet been uploaded to Supabase Storage or registered in `rag.documents`.
+  - FAQ text has not yet been chunked or embedded.
+  - No rows have yet been inserted into `rag.document_chunks`.
+  - The Vercel `/ask` endpoint has not yet been connected to pgvector.
+- Next step:
+  - Import the approved FAQ document, generate embeddings using the configured 384-dimensional embedding model, insert the chunks, mark the document `COMMITTED`, and verify retrieval by category.
+
+## 2026-09-25 - pgvector Retrieval Function and Reranker Decision
+
+- Status: passed
+- Goal: Confirm the purpose and boundary of the Supabase vector retrieval function before importing FAQ content.
+- Scope: `rag.match_document_chunks`, pgvector similarity search, FAQ category filtering, and retrieval ranking strategy.
+- Evidence:
+  - The function accepts a `extensions.vector(384)` question embedding.
+  - It searches the requested collection and only returns documents with `status = 'COMMITTED'`.
+  - It supports optional category filtering, a `0.35` minimum similarity threshold, and a default top-six result limit.
+  - It returns chunk content and source metadata required for answer citations.
+- Decision:
+  - Use Supabase `pgvector` as the initial retrieval ranker.
+  - Do not add a semantic reranker yet. Supabase/pgvector provides nearest-neighbor similarity ranking, not a separate cross-encoder reranker.
+  - Revisit reranking after importing representative FAQ content and measuring retrieval quality.
+- Verification:
+  - The retrieval function was created successfully in Supabase.
+  - Retrieval result testing is pending until committed FAQ embeddings exist.
+- Follow-up:
+  - Upload and register the approved FAQ document, generate 384-dimensional embeddings, insert committed chunks, then run category-specific retrieval tests.
+
+## 2026-09-25 - System Admin FAQ Ingestion Workspace
+
+- Status: in progress
+- Goal: Provide a governed UI for System Admins to stage FAQ documents for the future Supabase pgvector ingestion pipeline.
+- Implemented:
+  - Added the protected `/system-admin/rag` page and `FAQ Sources` System Admin navigation item.
+  - Added server-side authenticated proxy routes for document listing, upload preview, and approved commit.
+  - Added PDF, TXT, and Markdown upload validation with a 10 MB limit.
+  - Added an explicit preview gate showing extracted chunks, chunk count, embedding dimensions, expiry, and duplicate status before embedding.
+  - Added collection, model, category, committed-source, success, and failure states to the UI.
+  - Kept Google Drive folder synchronization visible as a future connector, without pretending that the connector exists yet.
+- Important boundary:
+  - The current companion RAG service still contains a Qdrant requirement in its ingestion storage path. The Pulse360 page is ready to front the workflow, but Supabase pgvector is not yet the live embedding write path.
+  - Category selection is staged in the UI and must be accepted and persisted by the upgraded Supabase ingestion endpoint before it becomes searchable metadata.
+- Configuration:
+  - Set `RAG_API_URL` on the Pulse360 server. Use `http://127.0.0.1:8767` only when both services run locally; deployed Pulse360 must use a deployed RAG API URL.
+- Verification:
+  - Source inspection and `git diff --check` are pending final verification.
+  - Typecheck/lint could not run because the local dependency install was blocked by the environment's npm registry/file-permission restrictions.
+- Next recovery step:
+  - Migrate the companion ingestion service from Qdrant/SQLite storage to Supabase `rag.documents` and `rag.document_chunks`, then run a real preview → approve → commit → retrieval smoke test.

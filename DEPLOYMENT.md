@@ -1,22 +1,27 @@
 # Pulse360 Deployment
 
-This repository is ready to deploy the `pulse360` Next.js app on Render with managed PostgreSQL, Prisma migrations, and GitHub Actions CI.
+This repository deploys the `pulse360` Next.js app on Render with Supabase PostgreSQL, Prisma migrations, and GitHub Actions CI.
 
 ## Render
 
 The Blueprint starts on Render's free plans. Free web services do not support Render pre-deploy commands, so database migration and seed run in `render:start`. Upgrade the web service plan and move `npm run db:migrate` back to `preDeployCommand` when you need a stricter production deployment flow.
 
-1. Commit and push `render.yaml` to `main`.
-2. In Render, create a new Blueprint from this GitHub repo.
-3. Render will create:
-   - `pulse360`, a Node web service rooted at `pulse360`
-   - `pulse360-db`, a managed PostgreSQL database
+1. Commit and push changes to a protected branch, then merge them into `main` after CI passes.
+2. Render deploys the `pulse360` Node web service from the `main` branch.
+3. Supabase PostgreSQL is the production database. Render is the application host only.
 4. On deploy, Render runs:
    - `npm ci && npx prisma generate && npm run build`
    - `npm run db:migrate` when the service starts
    - `npm run db:seed` when the service starts
 5. Fill `NEXTAUTH_URL` with the app's public Render URL, for example `https://your-service.onrender.com`.
 6. Fill `OPENAI_API_KEY` when Render prompts for it. Leave it blank only if you do not need the AI routes yet.
+7. For the System Admin FAQ ingestion page, set `RAG_API_URL` to the reachable companion RAG API base URL. A local value is `http://127.0.0.1:8767`; a deployed Render/Vercel app must use a deployed RAG API URL instead. The browser never calls the RAG service directly.
+
+## FAQ ingestion readiness
+
+System Admins can open `/system-admin/rag` to upload a PDF, TXT, or Markdown FAQ source, inspect the extracted chunks, choose a category, and explicitly approve the embedding request. The page calls authenticated Pulse360 proxy routes under `/api/system-admin/rag/*`.
+
+The current companion RAG implementation still requires Qdrant in its ingestion storage path. Before treating the page as a production Supabase pgvector pipeline, migrate that service to write `rag.collections`, `rag.documents`, and `rag.document_chunks`, pass category metadata through the commit endpoint, and verify retrieval using `rag.match_document_chunks`. Google Drive synchronization remains a future connector for maintaining governed source files in one folder.
 
 ## GitHub Actions
 
@@ -28,9 +33,9 @@ For safer production deploys, enable branch protection on `main` and require the
 
 Render is configured to call `/api/health`. The endpoint verifies both the app and database connection.
 
-## First Successful Deployment
+## Verified Production Deployment
 
-The first successful full-stack deployment was verified on 2026-08-07:
+The current production deployment was verified after the homepage integration and root-route update:
 
 ```text
 All migrations have been successfully applied.
@@ -39,6 +44,14 @@ Ready in 1503ms
 Your service is live
 Available at your primary URL https://pulse360-gkt8.onrender.com
 ```
+
+The public homepage is:
+
+```text
+https://pulse360-gkt8.onrender.com/
+```
+
+The public `/landing.html` suffix is no longer required. The landing HTML asset may remain internal to the root route, but the supported user-facing entry point is the root URL. The login page is available at `/login`.
 
 After the first deploy:
 

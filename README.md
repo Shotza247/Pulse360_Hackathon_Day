@@ -25,6 +25,7 @@
 15. [Human-in-the-Loop Log](#human-in-the-loop-log)
 16. [IBM Bob — Agentic AI Platform Notes](#ibm-bob--agentic-ai-platform-notes)
 17. [Useful Commands](#useful-commands)
+18. [Current Deployment Status](#current-deployment-status)
 
 ---
 
@@ -92,11 +93,57 @@ BigQuery is a future analytics-warehouse option, not part of the live transactio
 
 Production URL: **https://pulse360-gkt8.onrender.com**
 
+### Public entry point
+
+The deployed root URL is the canonical Pulse360 entry point:
+
+**https://pulse360-gkt8.onrender.com/**
+
+The landing page is rendered from the root route, so users do not need to visit
+`/landing.html`. The HTML asset remains an internal implementation detail used
+by the Next.js root page and is not the public navigation contract.
+
 Architecture requirements and non-functional requirements are maintained in [3. Architecture Requirements.md](3.%20Architecture%20Requirements.md).
 
 The full Mermaid architecture, event analytics, and review-cycle diagrams are maintained in [3. Architecture Requirements.md](3.%20Architecture%20Requirements.md).
 
 > **Blueprint note:** The live Render service uses Supabase through manually supplied `DATABASE_URL` and `DIRECT_URL` values. The Blueprint no longer sources `DATABASE_URL` from the retired Render Postgres resource or declares that database as a managed production dependency.
+
+## Current Deployment Status
+
+The landing-page integration is complete and deployed on the `main` branch.
+
+Verified repository history:
+
+- Homepage integration completed in `7846ff1`.
+- Landing-page and login navigation updates merged through PR #61 in `14af410`.
+- The final root homepage route update was committed as `ca84ce0` (`HomePage url update`).
+- `origin/main` currently points to `ca84ce0`.
+
+Verified production behavior:
+
+- Render build and deployment completed successfully.
+- `https://pulse360-gkt8.onrender.com/` displays the Pulse360 landing page.
+- The root URL is the public homepage entry point; users do not need to append `/landing.html`.
+- The login route remains available at `https://pulse360-gkt8.onrender.com/login`.
+
+This completes the first gate in the RAG implementation plan. The next phase can begin with the Supabase `pgvector` schema and FAQ ingestion work.
+
+### FAQ Assistant RAG Progress
+
+The Supabase vector foundation is now prepared:
+
+- Supabase `pgvector` extension enabled, version `0.8.2`.
+- Private `rag` schema created.
+- `rag.collections`, `rag.documents`, and `rag.document_chunks` created.
+- Initial `pulse360_faq` collection registered.
+- `rag.match_document_chunks` retrieval function created for committed FAQ chunks.
+
+The approved FAQ document has not yet been imported or embedded. The System Admin now has a protected `/system-admin/rag` ingestion workspace with an explicit preview gate, local PDF/TXT/Markdown upload, chunk inspection, category selection, and an approve-and-embed action. The server-side proxy keeps the RAG service URL out of the browser and limits access to `SYSTEM_ADMIN` users.
+
+The current companion RAG service still contains a Qdrant dependency in its embedding storage path. Therefore the page is the ingestion control surface, not evidence that production embeddings are already stored in Supabase. The next backend gate is to replace that storage path with Supabase `rag.documents` and `rag.document_chunks`, accept the selected category in the commit contract, and then connect the Vercel `/ask` endpoint to the pgvector retrieval function. Google Drive folder sync is intentionally deferred as a future source connector so governed documents can eventually be maintained in one location.
+
+The `rag.match_document_chunks` database function is the current retrieval boundary. It accepts a 384-dimensional question embedding, restricts searches to committed documents in `pulse360_faq`, optionally filters by category, applies a minimum similarity threshold of `0.35`, and returns the six highest-ranked chunks with citation metadata by default. Supabase `pgvector` supplies similarity ranking; it does not provide a semantic reranker. A reranker will remain deferred until baseline retrieval quality has been measured.
 
 ---
 
@@ -208,6 +255,7 @@ Production app: **https://pulse360-gkt8.onrender.com**
 | `NEXTAUTH_SECRET` | ✅ | Random string for JWT signing (min 32 chars) |
 | `NEXTAUTH_URL` | ✅ | Base URL of the app: `http://localhost:3000` locally and `https://pulse360-gkt8.onrender.com` in production |
 | `OPENAI_API_KEY` | ⚠️ Optional | Enables live AI Comment Suggestions, Theme Summary, Improvement Plan, and PDF Report narrative. App falls back to realistic stub responses if not set. |
+| `RAG_API_URL` | ⚠️ Required for FAQ ingestion | Server-side base URL for the companion RAG API. Use `http://127.0.0.1:8767` locally; use the deployed RAG API URL in Render/Vercel. Never expose this as a browser-side secret. |
 
 ---
 
