@@ -182,9 +182,13 @@
     .chatbot-messages { display: grid; align-content: start; gap: 12px; max-height: 250px; overflow-y: auto; padding: 14px; background: #f7f9fc; }
     .chatbot-row { display: flex; align-items: flex-end; gap: 7px; min-width: 0; }
     .chatbot-row.user { flex-direction: row-reverse; }
-    .chatbot-avatar { display: grid; flex: 0 0 26px; width: 26px; height: 26px; place-items: center; border: 1px solid #d5e1f2; border-radius: 50%; color: var(--navy); background: #eaf1fb; font-size: 10px; font-weight: 900; }
+    .chatbot-avatar { display: grid; flex: 0 0 30px; width: 30px; height: 30px; place-items: center; overflow: hidden; border: 1px solid #d5e1f2; border-radius: 50%; color: var(--navy); background: #eaf1fb; font-size: 10px; font-weight: 900; }
+    .chatbot-avatar.assistant-avatar.ai { border-color: #254766; color: white; background: #153451; }
+    .chatbot-avatar.assistant-avatar.ai svg { display: block; width: 19px; height: 19px; }
+    .chatbot-avatar.assistant-avatar.human { background: #eaf1fb; }
+    .chatbot-avatar.assistant-avatar.human img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; transform: scale(1.32); }
     .chatbot-row.user .chatbot-avatar { border-color: #c4d8fb; color: white; background: #457fd2; }
-    .chatbot-message { position: relative; max-width: calc(100% - 34px); padding: 10px 12px; border-radius: 13px 13px 13px 3px; color: #536176; background: white; box-shadow: 0 2px 5px rgba(18, 48, 94, .06); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+    .chatbot-message { position: relative; max-width: calc(100% - 38px); padding: 10px 12px; border-radius: 13px 13px 13px 3px; color: #536176; background: white; box-shadow: 0 2px 5px rgba(18, 48, 94, .06); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
     .chatbot-message::before { content: ""; position: absolute; bottom: 1px; left: -4px; width: 9px; height: 9px; background: inherit; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
     .chatbot-row.user .chatbot-message { border-radius: 13px 13px 3px 13px; color: white; background: var(--blue); }
     .chatbot-row.user .chatbot-message::before { right: -4px; left: auto; transform: scaleX(-1); }
@@ -289,10 +293,11 @@
   <button class="chatbot-launcher" id="chatbotLauncher" type="button" aria-expanded="false" aria-controls="chatbotPanel"><span>?</span>Ask Pulse360</button>
   <section class="chatbot-panel" id="chatbotPanel" aria-label="Pulse360 FAQ assistant">
     <div class="chatbot-header"><div><strong>Pulse360 assistant</strong><small>FAQ help for the Pulse360 platform</small></div><button class="chatbot-close" id="chatbotClose" type="button" aria-label="Close assistant">×</button></div>
-    <div class="chatbot-messages" id="chatbotMessages" aria-live="polite"><div class="chatbot-row assistant"><div class="chatbot-avatar" aria-hidden="true">P</div><div class="chatbot-message">Hi. I can answer a few questions about plans, bulk import, audiences, and privacy.</div></div></div>
+    <div class="chatbot-messages" id="chatbotMessages" aria-live="polite"><div class="chatbot-row assistant"><span class="chatbot-avatar assistant-avatar ai" data-assistant-type="ai" aria-hidden="true"></span><div class="chatbot-message">Hi. I can answer a few questions about plans, bulk import, audiences, and privacy.</div></div></div>
     <div class="chatbot-suggestions"><button class="chatbot-suggestion" type="button" data-question="Is the free plan really free?">Free plan</button><button class="chatbot-suggestion" type="button" data-question="Can we import employees in bulk?">Bulk import</button><button class="chatbot-suggestion" type="button" data-question="Can HR and Operations use different views?">HR and Ops</button><button class="chatbot-suggestion" type="button" data-question="How is data protected?">Privacy</button></div>
     <form class="chatbot-form" id="chatbotForm"><textarea id="chatbotInput" rows="1" placeholder="Type your question..." autocomplete="off" aria-label="Ask a question" aria-keyshortcuts="Enter Shift+Enter"></textarea><button type="submit">Send</button></form>
   </section>
+  <template id="aiAvatarTemplate"><svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 4.5v3.4" stroke="#73ddd0" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="3.6" r="1.8" fill="#73ddd0"/><rect x="6.2" y="9" width="19.6" height="17" rx="6" fill="#24496b" stroke="#e7f2ff" stroke-width="1.4"/><path d="M12 16.2h.1m7.8 0h.1" stroke="#73ddd0" stroke-width="3" stroke-linecap="round"/><path d="M12 21h8" stroke="#e7f2ff" stroke-width="1.6" stroke-linecap="round"/><path d="M3.5 14.5v6m25-6v6" stroke="#73ddd0" stroke-width="1.6" stroke-linecap="round"/></svg></template>
   <script>
     const toggle = document.getElementById('billingToggle');
     const pricingRegion = document.getElementById('currencyNote');
@@ -385,6 +390,7 @@
     const chatbotForm = document.getElementById('chatbotForm');
     const chatbotInput = document.getElementById('chatbotInput');
     const chatbotSend = chatbotForm.querySelector('button[type="submit"]');
+    const aiAvatarTemplate = document.getElementById('aiAvatarTemplate');
     const CHAT_INPUT_MAX_HEIGHT = 112;
     function resizeChatbotInput() {
       chatbotInput.style.height = 'auto';
@@ -413,13 +419,37 @@
       }
       return data;
     }
+    function createAssistantAvatar(type = 'ai') {
+      const assistantType = type === 'human' ? 'human' : 'ai';
+      const avatar = document.createElement('span');
+      avatar.className = `chatbot-avatar assistant-avatar ${assistantType}`;
+      avatar.dataset.assistantType = assistantType;
+      avatar.setAttribute('aria-hidden', 'true');
+      if (assistantType === 'human') {
+        const image = document.createElement('img');
+        image.src = 'assistant-avatar.webp';
+        image.alt = '';
+        avatar.appendChild(image);
+      } else {
+        avatar.appendChild(aiAvatarTemplate.content.cloneNode(true));
+      }
+      return avatar;
+    }
+    document.querySelectorAll('.assistant-avatar.ai').forEach((avatar) => {
+      avatar.appendChild(aiAvatarTemplate.content.cloneNode(true));
+    });
     function addChatbotMessage(text, isUser, details = {}) {
       const row = document.createElement('div');
       row.className = `chatbot-row ${isUser ? 'user' : 'assistant'}`;
-      const avatar = document.createElement('div');
-      avatar.className = 'chatbot-avatar';
-      avatar.setAttribute('aria-hidden', 'true');
-      avatar.textContent = isUser ? 'Y' : 'P';
+      let avatar;
+      if (isUser) {
+        avatar = document.createElement('div');
+        avatar.className = 'chatbot-avatar';
+        avatar.setAttribute('aria-hidden', 'true');
+        avatar.textContent = 'Y';
+      } else {
+        avatar = createAssistantAvatar(details.assistantType);
+      }
       const message = document.createElement('div');
       message.className = `chatbot-message${isUser ? ' user' : ''}`;
       message.textContent = text;
@@ -450,10 +480,7 @@
     async function answerQuestion(question) {
       const row = document.createElement('div');
       row.className = 'chatbot-row assistant';
-      const avatar = document.createElement('div');
-      avatar.className = 'chatbot-avatar';
-      avatar.setAttribute('aria-hidden', 'true');
-      avatar.textContent = 'P';
+      const avatar = createAssistantAvatar('ai');
       const loading = document.createElement('div');
       loading.className = 'chatbot-message loading';
       loading.textContent = 'Searching the Pulse360 FAQ...';
