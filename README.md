@@ -139,7 +139,9 @@ The Supabase vector foundation is now prepared:
 - Initial `pulse360_faq` collection registered.
 - `rag.match_document_chunks` retrieval function created for committed FAQ chunks.
 
-The approved FAQ document has not yet been imported or embedded. The next RAG milestone is to parse the document, create its chunks, generate 384-dimensional embeddings, insert them into `rag.document_chunks`, and verify category-filtered retrieval before connecting the Vercel `/ask` endpoint.
+The approved FAQ document has not yet been imported or embedded. The System Admin now has a protected `/system-admin/rag` ingestion workspace with an explicit preview gate, local PDF/TXT/Markdown upload, chunk inspection, category selection, and an approve-and-embed action. The server-side proxy keeps the RAG service URL out of the browser and limits access to `SYSTEM_ADMIN` users.
+
+The current companion RAG service still contains a Qdrant dependency in its embedding storage path. Therefore the page is the ingestion control surface, not evidence that production embeddings are already stored in Supabase. The next backend gate is to replace that storage path with Supabase `rag.documents` and `rag.document_chunks`, accept the selected category in the commit contract, and then connect the Vercel `/ask` endpoint to the pgvector retrieval function. Google Drive folder sync is intentionally deferred as a future source connector so governed documents can eventually be maintained in one location.
 
 The `rag.match_document_chunks` database function is the current retrieval boundary. It accepts a 384-dimensional question embedding, restricts searches to committed documents in `pulse360_faq`, optionally filters by category, applies a minimum similarity threshold of `0.35`, and returns the six highest-ranked chunks with citation metadata by default. Supabase `pgvector` supplies similarity ranking; it does not provide a semantic reranker. A reranker will remain deferred until baseline retrieval quality has been measured.
 
@@ -253,6 +255,7 @@ Production app: **https://pulse360-gkt8.onrender.com**
 | `NEXTAUTH_SECRET` | ✅ | Random string for JWT signing (min 32 chars) |
 | `NEXTAUTH_URL` | ✅ | Base URL of the app: `http://localhost:3000` locally and `https://pulse360-gkt8.onrender.com` in production |
 | `OPENAI_API_KEY` | ⚠️ Optional | Enables live AI Comment Suggestions, Theme Summary, Improvement Plan, and PDF Report narrative. App falls back to realistic stub responses if not set. |
+| `RAG_API_URL` | ⚠️ Required for FAQ ingestion | Server-side base URL for the companion RAG API. Use `http://127.0.0.1:8767` locally; use the deployed RAG API URL in Render/Vercel. Never expose this as a browser-side secret. |
 
 ---
 

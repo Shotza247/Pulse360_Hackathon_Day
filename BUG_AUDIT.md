@@ -196,3 +196,25 @@
   - Retrieval result testing is pending until committed FAQ embeddings exist.
 - Follow-up:
   - Upload and register the approved FAQ document, generate 384-dimensional embeddings, insert committed chunks, then run category-specific retrieval tests.
+
+## 2026-09-25 - System Admin FAQ Ingestion Workspace
+
+- Status: in progress
+- Goal: Provide a governed UI for System Admins to stage FAQ documents for the future Supabase pgvector ingestion pipeline.
+- Implemented:
+  - Added the protected `/system-admin/rag` page and `FAQ Sources` System Admin navigation item.
+  - Added server-side authenticated proxy routes for document listing, upload preview, and approved commit.
+  - Added PDF, TXT, and Markdown upload validation with a 10 MB limit.
+  - Added an explicit preview gate showing extracted chunks, chunk count, embedding dimensions, expiry, and duplicate status before embedding.
+  - Added collection, model, category, committed-source, success, and failure states to the UI.
+  - Kept Google Drive folder synchronization visible as a future connector, without pretending that the connector exists yet.
+- Important boundary:
+  - The current companion RAG service still contains a Qdrant requirement in its ingestion storage path. The Pulse360 page is ready to front the workflow, but Supabase pgvector is not yet the live embedding write path.
+  - Category selection is staged in the UI and must be accepted and persisted by the upgraded Supabase ingestion endpoint before it becomes searchable metadata.
+- Configuration:
+  - Set `RAG_API_URL` on the Pulse360 server. Use `http://127.0.0.1:8767` only when both services run locally; deployed Pulse360 must use a deployed RAG API URL.
+- Verification:
+  - Source inspection and `git diff --check` are pending final verification.
+  - Typecheck/lint could not run because the local dependency install was blocked by the environment's npm registry/file-permission restrictions.
+- Next recovery step:
+  - Migrate the companion ingestion service from Qdrant/SQLite storage to Supabase `rag.documents` and `rag.document_chunks`, then run a real preview → approve → commit → retrieval smoke test.

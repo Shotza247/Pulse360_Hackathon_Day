@@ -15,6 +15,13 @@ The Blueprint starts on Render's free plans. Free web services do not support Re
    - `npm run db:seed` when the service starts
 5. Fill `NEXTAUTH_URL` with the app's public Render URL, for example `https://your-service.onrender.com`.
 6. Fill `OPENAI_API_KEY` when Render prompts for it. Leave it blank only if you do not need the AI routes yet.
+7. For the System Admin FAQ ingestion page, set `RAG_API_URL` to the reachable companion RAG API base URL. A local value is `http://127.0.0.1:8767`; a deployed Render/Vercel app must use a deployed RAG API URL instead. The browser never calls the RAG service directly.
+
+## FAQ ingestion readiness
+
+System Admins can open `/system-admin/rag` to upload a PDF, TXT, or Markdown FAQ source, inspect the extracted chunks, choose a category, and explicitly approve the embedding request. The page calls authenticated Pulse360 proxy routes under `/api/system-admin/rag/*`.
+
+The current companion RAG implementation still requires Qdrant in its ingestion storage path. Before treating the page as a production Supabase pgvector pipeline, migrate that service to write `rag.collections`, `rag.documents`, and `rag.document_chunks`, pass category metadata through the commit endpoint, and verify retrieval using `rag.match_document_chunks`. Google Drive synchronization remains a future connector for maintaining governed source files in one folder.
 
 ## GitHub Actions
 
