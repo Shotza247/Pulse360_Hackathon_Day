@@ -10,7 +10,7 @@ The Blueprint starts on Render's free plans. Free web services do not support Re
 2. Render deploys the `pulse360` Node web service from the `main` branch.
 3. Supabase PostgreSQL is the production database. Render is the application host only.
 4. On deploy, Render runs:
-   - `npm ci && npx prisma generate && npm run build`
+   - `npm ci --include=dev && npx prisma generate && npm run build && npm prune --omit=dev`
    - `npm run db:migrate` when the service starts
    - `npm run db:seed` when the service starts
 5. Fill `NEXTAUTH_URL` with the app's public Render URL, for example `https://your-service.onrender.com`.
