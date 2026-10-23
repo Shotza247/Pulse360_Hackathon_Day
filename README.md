@@ -55,7 +55,7 @@ All features were built using **IBM Bob**, an enterprise agentic AI platform(Age
 | MCP Tooling | Model Context Protocol SDK | 1.11.4 |
 | Runtime | Node.js | 22.x |
 
-> **Production note:** Render hosts the Next.js web service and Supabase is the production PostgreSQL source of truth. Podman is optional and is used only for local development. See [RENDER_TO_SUPABASE_MIGRATION.md](RENDER_TO_SUPABASE_MIGRATION.md) for the migration record and recovery procedure.
+> **Production note:** Render hosts the Next.js web service and Supabase is the production PostgreSQL source of truth. Podman is optional and is used only for local development. See [the Render-to-Supabase runbook](docs/operations/RENDER_TO_SUPABASE_MIGRATION.md) for the migration record and recovery procedure.
 
 ---
 
@@ -103,9 +103,7 @@ The landing page is rendered from the root route, so users do not need to visit
 `/landing.html`. The HTML asset remains an internal implementation detail used
 by the Next.js root page and is not the public navigation contract.
 
-Architecture requirements and non-functional requirements are maintained in [3. Architecture Requirements.md](3.%20Architecture%20Requirements.md).
-
-The full Mermaid architecture, event analytics, and review-cycle diagrams are maintained in [3. Architecture Requirements.md](3.%20Architecture%20Requirements.md).
+The architecture overview and Mermaid diagram are maintained in this README. See the [documentation index](docs/README.md) for operational runbooks and audit history.
 
 > **Blueprint note:** The live Render service uses Supabase through manually supplied `DATABASE_URL` and `DIRECT_URL` values. The Blueprint no longer sources `DATABASE_URL` from the retired Render Postgres resource or declares that database as a managed production dependency.
 

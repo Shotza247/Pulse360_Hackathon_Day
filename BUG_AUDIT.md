@@ -218,3 +218,23 @@
   - Typecheck/lint could not run because the local dependency install was blocked by the environment's npm registry/file-permission restrictions.
 - Next recovery step:
   - Migrate the companion ingestion service from Qdrant/SQLite storage to Supabase `rag.documents` and `rag.document_chunks`, then run a real preview → approve → commit → retrieval smoke test.
+
+## 2026-10-23 - GitHub Desktop Push Targeted Protected Main Instead of Feature Branch
+
+- Status: fixed
+- Symptom: GitHub rejected a push with `GH013` and `Changes must be made through a pull request`. Git output showed `git push origin main:main`, although GitHub Desktop displayed the current branch as `feature/assistant-ai-avatar`. The toolbar displayed `Push origin/main`, and the user could not see a `Publish branch` action.
+- Scope: Local Git branch/upstream configuration, GitHub Desktop, and the repository ruleset protecting `main`.
+- Root cause: The attempted push explicitly targeted `main` (`main:main`), which is protected by the repository ruleset. The local feature branch was not initially being pushed to its matching remote feature ref, so Desktop's push target was misleading. This was not a CI failure and did not require weakening the ruleset.
+- Evidence:
+  - GitHub Desktop showed current branch `feature/assistant-ai-avatar`, with commit `0cbfdc6` (`Add dedicated AI assistant avatar`) as one local commit awaiting publication.
+  - The rejected command was `git push origin main:main` and GitHub identified `refs/heads/main` as the protected ref.
+  - Follow-up `git branch -vv` showed `feature/assistant-ai-avatar` at `0cbfdc6` tracking `origin/feature/assistant-ai-avatar`; local `main` remained at `c3c7814` tracking `origin/main`.
+- Recovery:
+  - From the repository root, explicitly publish the feature branch and set its upstream with `git push -u origin feature/assistant-ai-avatar`.
+  - If GitHub Desktop has no `Publish branch` button, use **Repository → Open in Terminal** and run the explicit command above; do not click a toolbar action that says `Push origin/main` while the current branch is the feature branch.
+  - If authentication fails, sign in to GitHub Desktop and retry the same feature-branch command. Do not bypass or weaken the `main` ruleset.
+- Verification:
+  - `git branch -vv` reported `feature/assistant-ai-avatar 0cbfdc6 [origin/feature/assistant-ai-avatar] Add dedicated AI assistant avatar`.
+  - The feature branch is published and configured to track its matching origin branch. Create the PR with base `main` and compare/head `feature/assistant-ai-avatar`; after checks pass, merge the PR to trigger the normal main-branch deployment workflow.
+- Follow-up:
+  - Confirm the pull request appears in GitHub with base `main` and head `feature/assistant-ai-avatar`, then follow its checks and merge status. No application code or repository ruleset changes are needed for this Git recovery.
