@@ -195,10 +195,10 @@
     .chatbot-suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px 4px; }
     .chatbot-suggestion { padding: 7px 9px; border: 1px solid #cbd7e6; border-radius: 999px; color: var(--navy); background: white; font: inherit; font-size: 11px; cursor: pointer; }
     .chatbot-suggestion:hover { border-color: var(--blue); background: #f4f8ff; }
-    .chatbot-form { display: flex; gap: 8px; padding: 10px 14px 14px; background: white; }
-    .chatbot-form input { min-width: 0; flex: 1; padding: 10px; border: 1px solid #d7dee8; border-radius: 6px; color: var(--ink); background: white; font: inherit; font-size: 12px; }
-    .chatbot-form input:focus { border-color: var(--blue); outline: 0; box-shadow: 0 0 0 3px rgba(45,112,216,.12); }
-    .chatbot-form button { padding: 0 13px; border: 0; border-radius: 6px; color: white; background: var(--blue); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .chatbot-form { display: flex; align-items: flex-end; gap: 8px; padding: 10px 14px 14px; background: white; }
+    .chatbot-form textarea { min-width: 0; min-height: 40px; max-height: 112px; flex: 1; overflow-y: hidden; resize: none; padding: 10px; border: 1px solid #d7dee8; border-radius: 8px; color: var(--ink); background: white; font: inherit; font-size: 12px; line-height: 1.45; }
+    .chatbot-form textarea:focus { border-color: var(--blue); outline: 0; box-shadow: 0 0 0 3px rgba(45,112,216,.12); }
+    .chatbot-form button { min-height: 40px; align-self: flex-end; padding: 0 13px; border: 0; border-radius: 6px; color: white; background: var(--blue); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
     .chatbot-form button:disabled { opacity: .6; cursor: wait; }
     .cta { color: white; background: var(--navy); }
     .cta .wrap { display: flex; align-items: center; justify-content: space-between; gap: 28px; }
@@ -291,7 +291,7 @@
     <div class="chatbot-header"><div><strong>Pulse360 assistant</strong><small>FAQ help for the Pulse360 platform</small></div><button class="chatbot-close" id="chatbotClose" type="button" aria-label="Close assistant">×</button></div>
     <div class="chatbot-messages" id="chatbotMessages" aria-live="polite"><div class="chatbot-row assistant"><div class="chatbot-avatar" aria-hidden="true">P</div><div class="chatbot-message">Hi. I can answer a few questions about plans, bulk import, audiences, and privacy.</div></div></div>
     <div class="chatbot-suggestions"><button class="chatbot-suggestion" type="button" data-question="Is the free plan really free?">Free plan</button><button class="chatbot-suggestion" type="button" data-question="Can we import employees in bulk?">Bulk import</button><button class="chatbot-suggestion" type="button" data-question="Can HR and Operations use different views?">HR and Ops</button><button class="chatbot-suggestion" type="button" data-question="How is data protected?">Privacy</button></div>
-    <form class="chatbot-form" id="chatbotForm"><input id="chatbotInput" type="text" placeholder="Ask a homepage question..." autocomplete="off" aria-label="Ask a question"><button type="submit">Send</button></form>
+    <form class="chatbot-form" id="chatbotForm"><textarea id="chatbotInput" rows="1" placeholder="Type your question..." autocomplete="off" aria-label="Ask a question" aria-keyshortcuts="Enter Shift+Enter"></textarea><button type="submit">Send</button></form>
   </section>
   <script>
     const toggle = document.getElementById('billingToggle');
@@ -385,6 +385,19 @@
     const chatbotForm = document.getElementById('chatbotForm');
     const chatbotInput = document.getElementById('chatbotInput');
     const chatbotSend = chatbotForm.querySelector('button[type="submit"]');
+    const CHAT_INPUT_MAX_HEIGHT = 112;
+    function resizeChatbotInput() {
+      chatbotInput.style.height = 'auto';
+      const contentHeight = chatbotInput.scrollHeight;
+      chatbotInput.style.height = `${Math.min(contentHeight, CHAT_INPUT_MAX_HEIGHT)}px`;
+      chatbotInput.style.overflowY = contentHeight > CHAT_INPUT_MAX_HEIGHT ? 'auto' : 'hidden';
+    }
+    chatbotInput.addEventListener('input', resizeChatbotInput);
+    chatbotInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+      event.preventDefault();
+      if (chatbotInput.value.trim()) chatbotForm.requestSubmit();
+    });
     const RAG_API_ENDPOINT = 'http://127.0.0.1:8767/ask';
     const RAG_COLLECTION_ID = 'pulse360_faq';
     async function askPulse360(question) {
@@ -483,6 +496,7 @@
       if (!question) return;
       addChatbotMessage(question, true);
       chatbotInput.value = '';
+      resizeChatbotInput();
       chatbotSend.disabled = true;
       chatbotInput.disabled = true;
       chatbotForm.setAttribute('aria-busy', 'true');
