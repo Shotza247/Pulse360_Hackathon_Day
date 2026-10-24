@@ -19,13 +19,13 @@
 9. [Running the App](#running-the-app)
 10. [Test Accounts](#test-accounts)
 11. [Project Structure](#project-structure)
-12. [API Reference](#api-reference)
+12. [Selected API Endpoints](#selected-api-endpoints)
 13. [Review Cycle Lifecycle](#review-cycle-lifecycle)
 14. [Features Implemented](#features-implemented)
 15. [Human-in-the-Loop Log](#human-in-the-loop-log)
 16. [IBM Bob — Agentic AI Platform Notes](#ibm-bob--agentic-ai-platform-notes)
 17. [Useful Commands](#useful-commands)
-18. [Current Deployment Status](#current-deployment-status)
+18. [Deployment Status](#deployment-status)
 
 ---
 
@@ -35,7 +35,7 @@ Pulse360 replaces the original **eWay 360° Review** name with a modern product 
 
 **Four roles** — System Administrator, HR Administrator, Line Manager, and Employee — each see a tailored dashboard and workflow through an **8-phase review cycle**: Draft → Nominate → Approve → Review → Calculation → Consultation → Accept → Closed. The System Administrator is a separate platform-operations persona for adoption analytics, audit metadata, AI usage, and operational health monitoring without exposing sensitive review scores or comments.
 
-All features were built using **IBM Bob**, an enterprise agentic AI platform(Agentic SDLC Development partner), in a single hackathon day. Bob acted as Developer, Architect, QA Reviewer, Data Engineer, and Security Reviewer throughout the build. My role was to guide bob on the companies architecture, designs shift and other capabilities and feature that would make the product very useful, provide business value and create a differentiator with IBM BOB for Agentic SDLC Development by proving that it is possible to build a fully AI integrated system in a day with minimal ease saying developers the time on development and prototyping.
+Pulse360 began as a hackathon prototype built with IBM Bob as an agentic development partner. It has since evolved through iterative, human-directed work across the application, deployment, analytics, and FAQ-assistant experience. IBM Bob contributed to the initial implementation; the current repository reflects the broader ongoing project, not a one-day build.
 
 ---
 
@@ -50,7 +50,7 @@ All features were built using **IBM Bob**, an enterprise agentic AI platform(Age
 | ORM | Prisma | 7.9.1 |
 | Auth | NextAuth.js | 4.24.15 |
 | UI | Tailwind CSS | 4.x |
-| AI Text Generation | OpenAI SDK (GPT-4o) | 7.4.0 |
+| AI Text Generation | OpenAI SDK (GPT-4o and GPT-5.1, by feature) | 7.4.0 |
 | Agentic AI Platform | IBM Bob | 2 |
 | MCP Tooling | Model Context Protocol SDK | 1.11.4 |
 | Runtime | Node.js | 22.x |
@@ -69,8 +69,8 @@ flowchart LR
     N --> P[Prisma]
     P --> DB[(Supabase PostgreSQL)]
     N -. optional .-> AI[OpenAI API]
-    N -. approval-gated .-> MCP[pulse360-mcp]
-    MCP --> FILES[CSV / PDF Downloads]
+    N --> B[Browser PDF / CSV downloads]
+    N -. optional local tools .-> MCP[pulse360-mcp]
     DB --> EVENTS[Audit and Event Tables]
     EVENTS --> SYS[System Admin Aggregated Analytics]
     EVENTS -. future ETL .-> BQ[(BigQuery)]
@@ -84,7 +84,8 @@ Browser
        -> Prisma
             -> Supabase PostgreSQL
        -> OpenAI API (optional AI assistance)
-       -> pulse360-mcp (human-approved CSV/report generation)
+       -> Browser downloads (CSV and print-to-PDF)
+       -> Optional local MCP filesystem tools
 ```
 
 Supabase stores the transactional application data and dedicated event projections used by the System Admin dashboard. These projections include authentication, profile, nomination, review, audit, AI usage, and AI human-in-the-loop events. System Admin analytics are operational and aggregated; review comments and scores remain outside that dashboard.
@@ -103,29 +104,21 @@ The landing page is rendered from the root route, so users do not need to visit
 `/landing.html`. The HTML asset remains an internal implementation detail used
 by the Next.js root page and is not the public navigation contract.
 
+The landing-page assistant distinguishes the AI assistant avatar from the
+human-assistant avatar. Its composer expands while text is entered, then scrolls
+internally; Enter sends and Shift+Enter inserts a newline.
+
 The architecture overview and Mermaid diagram are maintained in this README. See the [documentation index](docs/README.md) for operational runbooks and audit history.
 
 > **Blueprint note:** The live Render service uses Supabase through manually supplied `DATABASE_URL` and `DIRECT_URL` values. The Blueprint no longer sources `DATABASE_URL` from the retired Render Postgres resource or declares that database as a managed production dependency.
 
-## Current Deployment Status
+## Deployment Status
 
-The landing-page integration is complete and deployed on the `main` branch.
-
-Verified repository history:
-
-- Homepage integration completed in `7846ff1`.
-- Landing-page and login navigation updates merged through PR #61 in `14af410`.
-- The final root homepage route update was committed as `ca84ce0` (`HomePage url update`).
-- `origin/main` currently points to `ca84ce0`.
-
-Verified production behavior:
-
-- Render build and deployment completed successfully.
-- `https://pulse360-gkt8.onrender.com/` displays the Pulse360 landing page.
-- The root URL is the public homepage entry point; users do not need to append `/landing.html`.
-- The login route remains available at `https://pulse360-gkt8.onrender.com/login`.
-
-This completes the first gate in the RAG implementation plan. The next phase can begin with the Supabase `pgvector` schema and FAQ ingestion work.
+The root homepage and `/login` are the public entry points. Render deploys from
+`main` after CI passes (`autoDeployTrigger: checksPass`); use the Render deploy
+history to verify which commit is live instead of relying on a fixed commit hash
+in this README. The assistant-avatar change was merged through PR #64. Confirm
+its production deployment in Render before describing it as live.
 
 ### FAQ Assistant RAG Progress
 
@@ -137,9 +130,9 @@ The Supabase vector foundation is now prepared:
 - Initial `pulse360_faq` collection registered.
 - `rag.match_document_chunks` retrieval function created for committed FAQ chunks.
 
-The approved FAQ document has not yet been imported or embedded. The System Admin now has a protected `/system-admin/rag` ingestion workspace with an explicit preview gate, local PDF/TXT/Markdown upload, chunk inspection, category selection, and an approve-and-embed action. The server-side proxy keeps the RAG service URL out of the browser and limits access to `SYSTEM_ADMIN` users.
+The System Admin has a protected `/system-admin/rag` ingestion workspace with an explicit preview gate, local PDF/TXT/Markdown upload, chunk inspection, category selection, and an approve-and-embed action. The server-side proxy keeps the RAG service URL out of the browser and limits access to `SYSTEM_ADMIN` users. Creating the schema and retrieval function does not mean a source document has been embedded; end-to-end ingestion and `/ask` retrieval still require a successful smoke test against the companion RAG service.
 
-The current companion RAG service still contains a Qdrant dependency in its embedding storage path. Therefore the page is the ingestion control surface, not evidence that production embeddings are already stored in Supabase. The next backend gate is to replace that storage path with Supabase `rag.documents` and `rag.document_chunks`, accept the selected category in the commit contract, and then connect the Vercel `/ask` endpoint to the pgvector retrieval function. Google Drive folder sync is intentionally deferred as a future source connector so governed documents can eventually be maintained in one location.
+The ingestion page is a control surface, not evidence that production embeddings are already stored in Supabase. The backend gate is to write document/chunk metadata and embeddings to Supabase `rag.documents` and `rag.document_chunks`, persist category metadata, connect the `/ask` endpoint to the pgvector retrieval function, and verify the full flow. Google Drive folder sync is intentionally deferred as a future source connector.
 
 The `rag.match_document_chunks` database function is the current retrieval boundary. It accepts a 384-dimensional question embedding, restricts searches to committed documents in `pulse360_faq`, optionally filters by category, applies a minimum similarity threshold of `0.35`, and returns the six highest-ranked chunks with citation metadata by default. Supabase `pgvector` supplies similarity ranking; it does not provide a semantic reranker. A reranker will remain deferred until baseline retrieval quality has been measured.
 
@@ -163,7 +156,7 @@ The `rag.match_document_chunks` database function is the current retrieval bound
 
 | Requirement | Version | Notes |
 |---|---|---|
-| [Node.js](https://nodejs.org/) | v20+ | Required to run the Next.js app |
+| [Node.js](https://nodejs.org/) | v22 | Matches the GitHub Actions CI runtime |
 | [Podman](https://podman.io/) | v5+ | Used to run the PostgreSQL container |
 | npm | v9+ | Bundled with Node.js |
 
@@ -368,101 +361,29 @@ All passwords are bcrypt-hashed in the database — never stored in plain text.
 ## Project Structure
 
 ```
-hackathon-v2-ibm/
+Pulse360_Hackathon_Day/
 ├── README.md
 ├── .env.example
-├── docker-compose.yml              # Reference only — use Podman
-├── .bob/
-│   └── mcp.json                    # MCP server registration (pulse360-mcp)
-├── database/
-│   └── init/                       # 8 SQL init scripts (applied in order)
-│       ├── 01_extensions.sql
-│       ├── 02_enums.sql
-│       ├── 03_schema.sql
-│       ├── 04_indexes.sql
-│       ├── 05_seed_criteria.sql
-│       ├── 06_seed_departments.sql
-│       ├── 07_seed_employees.sql
-│       └── 08_add_password_hash.sql
-└── pulse360/                        # Next.js application
-    ├── .env                         # Local env (not committed)
-    ├── next.config.ts
-    ├── prisma.config.ts             # Prisma v7 datasource config
-    ├── prisma/
-    │   └── schema.prisma            # 11 models, 7 enums
-    ├── mcp-server/                  # ✨ Custom MCP server (TypeScript)
-    │   ├── src/index.ts             # Two tools: write_csv, generate_pdf_report
-    │   ├── build/index.js           # Compiled output (registered in .bob/mcp.json)
-    │   └── package.json
+├── BUG_AUDIT.md
+├── docs/                         # Deployment, migration, and incident guides
+├── database/init/                # Optional local PostgreSQL bootstrap scripts
+├── render.yaml                   # Render Blueprint for the web service
+├── .github/workflows/ci.yml      # Pull request and main-branch CI
+└── pulse360/                     # Next.js application
+    ├── prisma/                   # Prisma schema and versioned migrations
+    ├── public/                   # Landing-page and assistant-avatar assets
+    ├── scripts/                  # Database seed and maintenance scripts
     └── src/
-        ├── proxy.ts                 # Next.js 16 middleware (RBAC route guards)
-        ├── components/
-        │   ├── Sidebar.tsx          # Role-aware navigation
-        │   ├── CycleList.tsx        # Cycle phase stepper (client component)
-        │   ├── AISummaryPanel.tsx   # AI Feedback Theme Summary panel
-        │   └── SelfAssessmentPanel.tsx  # ✨ Self-assessment + gap analysis + improvement plan
-        ├── lib/
-        │   ├── auth.ts              # NextAuth v4 credentials provider
-        │   ├── auth.types.ts        # Session type augmentation
-        │   └── prisma.ts            # PrismaClient singleton with pg adapter
-        └── app/
-            ├── layout.tsx
-            ├── page.tsx             # Root redirect → /dashboard or /login
-            ├── globals.css
-            ├── login/
-            ├── api/
-            │   ├── auth/[...nextauth]/
-            │   ├── ai/
-            │   │   ├── suggest-comments/     # POST — AI comment suggestions (GPT-4o)
-            │   │   ├── theme-summary/        # POST — AI feedback theme analysis (GPT-4o)
-            │   │   └── improvement-plan/     # ✨ POST — AI self-improvement plan + gap analysis
-            │   ├── analytics/
-            │   │   ├── heatmap/              # GET — dept × criterion heatmap + trends + pie data
-            │   │   └── report/               # ✨ POST — AI-generated PDF report HTML
-            │   ├── mcp/
-            │   │   ├── write-csv/            # ✨ POST — MCP tool proxy: write improvement plan CSV
-            │   │   └── generate-report/      # ✨ POST — MCP tool proxy: write approved report HTML
-            │   ├── approvals/[id]/approve/   # POST
-            │   ├── approvals/[id]/reject/    # POST
-            │   ├── approvals/bulk-approve/   # POST
-            │   ├── criteria/                 # GET (active), POST (create new)
-            │   ├── criteria/full/            # GET (all + questions)
-            │   ├── criteria/[id]/            # PUT (edit / toggle active)
-            │   ├── cycles/                   # GET, POST
-            │   ├── cycles/list/              # GET (lightweight list)
-            │   ├── cycles/[id]/advance/      # POST (advance phase + auto-calculate scores)
-            │   ├── departments/              # GET
-            │   ├── employees/                # GET, POST
-            │   ├── employees/list/           # GET (dept-scoped for non-HR roles) ✨ Updated
-            │   ├── employees/managers/       # GET
-            │   ├── employees/[id]/           # GET, PUT
-            │   ├── nominations/              # GET, POST (dept-scoped validation) ✨ Updated
-            │   ├── nominations/cycle/        # GET (effective min/max per pool size) ✨ Updated
-            │   ├── nominations/submit/       # POST (effective min per pool size) ✨ Updated
-            │   ├── nominations/[id]/         # DELETE
-            │   ├── reviews/                  # POST (save/submit)
-            │   └── reviews/draft/            # GET (load draft)
-            └── (app)/                        # Authenticated app shell
-                ├── layout.tsx               # Sidebar + session wrapper
-                ├── analytics/               # ✨ Rebuilt: cycle selector, pie chart, trend bars, heatmap, AI report
-                ├── approvals/               # HR Admin + Manager — nomination approvals + bulk approve
-                ├── criteria/                # HR Admin — view/edit/add/deactivate criteria
-                ├── cycles/                  # HR Admin — list cycles + advance phases
-                ├── cycles/new/              # HR Admin — create new cycle
-                ├── dashboard/               # All roles — role-specific dashboards
-                ├── employees/               # HR Admin — employee list
-                ├── employees/[id]/          # HR Admin — add/edit employee
-                ├── manager/results/         # Manager — team results + AI summary
-                ├── my-results/              # ✨ Employee — own results + AI summary + self-assessment
-                ├── nominations/             # Employee + Manager — nominate peers (dept-scoped)
-                ├── results/                 # HR Admin — all employee results
-                ├── reviews/                 # All roles — pending review list
-                └── reviews/[employeeId]/    # All roles — 28-question form + AI suggestions
+        ├── app/                  # Public, authenticated, and API routes
+        ├── components/           # Shared UI components
+        └── lib/                  # Authentication, database, and domain helpers
 ```
 
 ---
 
-## API Reference
+## Selected API Endpoints
+
+This is a high-level list, not a generated OpenAPI contract. The route handlers under `pulse360/src/app/api/` are authoritative.
 
 ### Authentication
 | Method | Endpoint | Description |
@@ -522,16 +443,21 @@ hackathon-v2-ibm/
 | Method | Endpoint | Role | Description |
 |---|---|---|---|
 | GET | `/api/analytics/heatmap?cycleId=` | HR Admin | Dept × criterion scores + `allCycles`, `deptOveralls`, `trends` |
-| POST | `/api/analytics/report` | HR Admin | Generate AI narrative HTML report (GPT-4o or stub) |
+| POST | `/api/analytics/report` | HR Admin | Generate the narrative and analytics data for the report preview (GPT-4o or stub) |
 | POST | `/api/ai/suggest-comments` | All | Generate AI draft feedback comments from ratings (GPT-4o) |
 | POST | `/api/ai/theme-summary` | All | Generate AI theme summary from all peer comments (GPT-4o) |
-| POST | `/api/ai/improvement-plan` | All | Generate AI self-improvement plan with gap analysis (GPT-4o) |
+| POST | `/api/ai/improvement-plan` | All | Generate AI self-improvement plan with gap analysis (GPT-5.1) |
+
+The improvement-plan endpoint currently uses GPT-5.1; comment suggestions, theme summaries, and the report narrative use GPT-4o.
+Other implemented route groups include `/api/profile`, `/api/notifications`, `/api/dashboard/*`, `/api/system-admin/rag/*`, and `/api/health`.
 
 ### MCP Tool Proxies
+
+These are legacy server-side filesystem endpoints, not the browser download workflow. Avoid passing a user's local machine path to a hosted endpoint.
 | Method | Endpoint | Role | Description |
 |---|---|---|---|
 | POST | `/api/mcp/write-csv` | All (HITL) | Write approved improvement plan to CSV (called post-approval only) |
-| POST | `/api/mcp/generate-report` | HR Admin (HITL) | Write approved HTML report to disk (called post-approval only) |
+| POST | `/api/mcp/generate-report` | HR Admin | Legacy server-side HTML file writer; it writes to a server path and is not the browser's PDF download flow |
 
 ---
 
@@ -572,7 +498,7 @@ DRAFT → NOMINATE → APPROVE → REVIEW → CALCULATION → CONSULTATION → A
 | **Results**             | Phase-gated: HR+Manager from CONSULTATION, Employee from ACCEPT only                 |
 | **Dashboards**          | Role-specific dashboards with progress rings, action banners, team rosters           |
 
-### ✅ MVP 2 — Completed (10 of 15 features)
+### ✅ MVP 2 — Implemented and planned capabilities
 
 | Feature                                      | Status          | Notes                                                                                                  |
 | ----------------------------------------------| -----------------| --------------------------------------------------------------------------------------------------------|
@@ -580,7 +506,7 @@ DRAFT → NOMINATE → APPROVE → REVIEW → CALCULATION → CONSULTATION → A
 | **AI Comment Suggestions**                   | ✅ Done          | GPT-4o generates "doing well" + "improve" draft; reviewer Accepts / Edits / Discards → live HITL       |
 | **AI Feedback Theme Summary**                | ✅ Done          | GPT-4o surfaces top 3 strengths, top 3 growth areas, overall sentiment                                 |
 | **Department Heatmap**                       | ✅ Done          | Colour-coded grid (red→amber→green), org averages, top/bottom panels                                   |
-| **PDF Report Generation**                    | ✅ Done          | AI generates narrative HTML report; human reviews + edits; MCP tool writes to disk post-approval       |
+| **PDF Report Generation**                    | ✅ Done          | HR reviews/edits narrative with analytics preview, approves, then opens the browser print dialog to save as PDF |
 | **Self-Assessment + Gap Analysis**           | ✅ Done          | Employee self-rates with sliders; AI computes gap vs peer score; labels Overrating/Underrating/Aligned |
 | **Historical Trend Comparison**              | ✅ Done          | SVG grouped bar chart across all closed cycles; per-criterion org averages compared                    |
 | Bulk employee import (XLSX)                  | ⬜ Not built     | Add Employee UI exists for one-at-a-time entry                                                         |
@@ -593,14 +519,14 @@ DRAFT → NOMINATE → APPROVE → REVIEW → CALCULATION → CONSULTATION → A
 
 | Feature | Description |
 |---|---|
-| **AI Self-Improvement Plan** | After gap analysis, AI generates a personalised weekly action / monthly goal / success metric per criterion. Human must approve before export. |
-| **MCP Server (pulse360-mcp)** | Custom TypeScript MCP server with `write_csv` and `generate_pdf_report` tools, registered in Bob's MCP panel. Invoked only post human approval. |
+| **AI Self-Improvement Plan** | After gap analysis, AI generates a personalised weekly action / monthly goal / success metric per criterion. The employee reviews and approves before downloading the CSV. |
+| **MCP Server (pulse360-mcp)** | Optional local TypeScript tools for filesystem exports. These are separate from the web app's browser-based downloads and should not be used to write to a user's local path from the hosted service. |
 | **Department-Scoped Nominations** | Peer selection restricted to same department for non-HR roles — enforced both in the employee list API and nomination POST validation. |
 | **Small-Department Adaptive Limits** | `effectiveMinNominees` and `effectiveMaxNominees` auto-calculated from pool size, so teams of 2 can still complete the nomination workflow. |
 | **Cycle History Selector** | Analytics dashboard lets HR choose any historical closed cycle to view, compare, and report on. |
 | **Pie Chart Visualisation** | Pure SVG (no external charting lib) showing each department's share of the org-wide average score. |
 | **Bulk Approve Nominations** | HR Admin can approve all pending nominations with one click (per employee or all at once). |
-| **CSV Export via MCP** | Approved improvement plan written as Excel-compatible CSV via the `write_csv` MCP tool — human must click Approve first. |
+| **CSV Export** | Approved improvement plan is downloaded by the user's browser as an Excel-compatible CSV; no machine-specific Windows path is used. |
 | **System Admin Platform Analytics** | Dedicated System Admin experience for adoption, login activity, nomination/review completion, approval bottlenecks, anonymized behavioral network patterns, AI token metadata, and AI accept/edit/discard decisions. |
 | **Audit Trail Events** | Captures key operational events such as logins, profile updates, nomination actions, approval/rejection decisions, review submissions, AI generation calls, and human-in-the-loop AI decisions. |
 
@@ -627,8 +553,8 @@ The hackathon rules require minimum 3 HITL interventions. We documented **10**:
 |---|---|---|---|
 | 7 | **AI Comment Suggestions** | Reviewer sees AI-generated "doing well" and "improve" text before saving a review | Accept as-is / Edit / Discard — full control retained |
 | 8 | **AI Feedback Theme Summary** | Employee or manager clicks Generate to surface top 3 strengths and growth areas | Human reads the output and decides how to act on it |
-| 9 | **AI PDF Report Generation** | HR Admin generates AI narrative report → reviews it in a preview pane → optionally edits raw HTML | Must click **Approve & Save** before MCP tool writes the file |
-| 10 | **AI Self-Improvement Plan** | Employee reviews weekly actions, monthly goals, success metrics → must click **I've reviewed this — Approve** | MCP `write_csv` tool only fires after explicit human approval |
+| 9 | **AI PDF Report Generation** | HR Admin generates a narrative and analytics preview, reviews/edits it, and approves | **Print / Save PDF** opens the browser print dialog; the user selects Save as PDF |
+| 10 | **AI Self-Improvement Plan** | Employee reviews weekly actions, monthly goals, and success metrics | The browser downloads CSV only after explicit approval |
 
 ---
 
@@ -644,16 +570,16 @@ IBM Bob was used as the **primary development agent** throughout the hackathon, 
 | **Data Architect** | Designed 11-table PostgreSQL schema, seeded 57 synthetic employees, modelled 8-phase cycle lifecycle |
 | **Security Reviewer** | Identified bcrypt hash issue, enforced RBAC on every API route, added server-side nomination validation |
 | **QA / Tester** | Ran `tsc --noEmit` after every change, caught TypeScript errors, validated API contracts |
-| **AI Feature Developer** | Built all 4 AI endpoints (suggest-comments, theme-summary, improvement-plan, report) with GPT-4o + stub fallback |
-| **MCP Server Builder** | Scaffolded, implemented, and registered the `pulse360-mcp` server with `write_csv` and `generate_pdf_report` tools |
+| **AI Feature Developer** | Built AI endpoints for comments, theme summaries, improvement plans, and reports, with feature-specific models and fallback behavior |
+| **MCP Server Builder** | Built optional filesystem tools; the hosted web download experience uses browser downloads instead |
 | **Technical Writer** | Generated this README, the executive summary, and inline code documentation |
 
 ### Key IBM Bob capabilities demonstrated
 
 - **Multi-turn agentic reasoning** —  Bob maintained context across a full day of iterative feature requests without losing architectural context
 - **Human-in-the-Loop orchestration** — Using Bob I built HITL checkpoints into the product itself (AI suggestions require human approval before persistence)
-- **MCP tool authoring** —  Using Bob I created a custom MCP server from scratch, registered it, and wired it into the app's approval flow (if you have a starterkit on .git use it)
-- **Text generation integration** — All four AI features use GPT-5.1 for text generation, with Bob writing the prompts, parsing the responses, and building the stub fallback chain 
+- **MCP tool authoring** — Built optional local filesystem tools; the hosted web UI uses browser-based exports.
+- **Text generation integration** — AI features use GPT-4o or GPT-5.1 according to the endpoint, with prompt parsing and fallback behavior where implemented.
 - **TypeScript discipline** — Every change validated with `tsc --noEmit` before being considered complete
 - **Parallel task execution** — Bob ran independent tasks in parallel (DB clear + API build + MCP build + page rebuild) to compress build time
 
@@ -661,12 +587,12 @@ IBM Bob was used as the **primary development agent** throughout the hackathon, 
 
 ### MCP Server (`pulse360-mcp`)
 
-Registered at `.bob/mcp.json`. Two tools:
+The local `pulse360-mcp` server exposes filesystem tools. They are not the download path used by the hosted web UI:
 
 | Tool | Trigger | Guard |
 |---|---|---|
-| `write_csv` | User approves improvement plan → clicks Download | Post-approval only; description states "invoke ONLY after user review" |
-| `generate_pdf_report` | HR Admin approves report → clicks Save to Downloads | Post-approval only; description states "invoke ONLY after human review" |
+| `write_csv` | Explicit local MCP invocation | Writes to a server/local filesystem path; do not use it for a hosted user's browser download |
+| `generate_pdf_report` | Explicit local MCP invocation | Writes HTML to a server/local filesystem path; browser report export instead opens Print / Save PDF |
 
 ---
 
