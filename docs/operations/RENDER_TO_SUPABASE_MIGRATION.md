@@ -1,6 +1,8 @@
-# Render Postgres to Supabase Migration
+# Render PostgreSQL to Supabase Migration Record and Recovery
 
-This runbook moves Pulse360 from the temporary Render free PostgreSQL database to Supabase Postgres while keeping Render as the web host.
+> **Migration completed:** The production cutover to Supabase was verified on 2026-09-10. The former Render PostgreSQL database is suspended/expired and is not a valid rollback target. The steps below are retained as a historical procedure for a future migration; do not repeat them against the live Supabase database.
+
+Render remains the web host. Supabase is the production PostgreSQL source of truth. The Render service has manually configured `DATABASE_URL` and `DIRECT_URL` values, and the Blueprint no longer provisions or references the retired Render database.
 
 ## Recommended Target Design
 
@@ -25,11 +27,13 @@ In Supabase, open the project, click **Connect**, and collect:
 | Variable | Use | Recommended Supabase URL |
 |---|---|---|
 | `DATABASE_URL` | Runtime app queries from Render | Supavisor session pooler, usually port `5432` |
-| `DIRECT_URL` | Prisma migrations, seed, admin tooling | Direct database URL on port `5432`; if direct IPv6 is unreachable, use the Supavisor session pooler |
+| `DIRECT_URL` | Prisma migrations, seed, admin tooling | Supavisor session pooler on port `5432` for the verified Render network path |
 
-For Prisma with the `pg` adapter, avoid the transaction pooler on port `6543` for migrations. Prisma migration commands need a stable session.
+The direct Supabase host was unreachable from Render (`P1001`); both production URLs were switched to the Supavisor session pooler on port `5432`. Avoid the transaction pooler on port `6543` for Prisma migrations, which need a stable session.
 
-## Safe Migration Path
+## Original Cutover Procedure (Historical)
+
+The steps below document the completed 2026 migration. The Render source database has expired; do not run the source-backup steps against it now.
 
 ### 1. Freeze production writes
 
@@ -43,7 +47,7 @@ In Render:
 
 This prevents new nominations/reviews/audit events from being written to Render Postgres after the dump is taken.
 
-### 2. Back up the current Render database
+### 2. Back up the source Render database (before retirement)
 
 From a machine with PostgreSQL client tools installed, use Render's external database URL:
 
@@ -114,7 +118,7 @@ NODE_ENV=production
 
 Do not rotate `NEXTAUTH_SECRET` during the database migration unless you intentionally want all sessions invalidated.
 
-### 7. Update Render Blueprint
+### 7. Update Render Blueprint (completed)
 
 The Blueprint has been updated so the production service no longer receives `DATABASE_URL` from the retired Render-managed database. `DATABASE_URL` and `DIRECT_URL` are now manually supplied through Render environment values.
 
@@ -129,14 +133,14 @@ envVars:
   - key: DIRECT_URL
     sync: false
   - key: NEXTAUTH_SECRET
-    sync: false
+    generateValue: true
   - key: NEXTAUTH_URL
     sync: false
   - key: OPENAI_API_KEY
     sync: false
 ```
 
-Then remove the `databases:` block from `render.yaml`.
+The `databases:` block has already been removed from the current `render.yaml`.
 
 The Blueprint change must be applied only after the Supabase database is restored and both Render environment values are populated.
 
@@ -170,14 +174,14 @@ select count(*) from ai_usage_event;
 
 ## Rollback
 
-If Supabase connection fails:
+The former Render database is not available for rollback. If Supabase becomes unavailable:
 
-1. Put the old Render `DATABASE_URL` back into Render env vars.
-2. Remove or blank `DIRECT_URL`.
-3. Redeploy.
-4. Keep the Supabase dump/restore attempt for analysis.
+1. Do not point Render back at the expired Render database.
+2. Diagnose Supabase connectivity and configuration first; do not run `pg_restore --clean` against the production database as a connectivity fix.
+3. If recovery from data loss is required, restore a verified backup to a separate recovery database, validate it, then plan a controlled cutover.
+4. Reconcile writes made after the backup timestamp before switching traffic.
 
-If data was written to Supabase during the failed cutover, do not delete either database until you reconcile what changed.
+Keep the verified backup and its timestamp documented. Never delete or overwrite the only known-good production copy during recovery.
 
 ## BigQuery Later
 

@@ -19,13 +19,13 @@ The Blueprint starts on Render's free plans. Free web services do not support Re
 
 ## FAQ ingestion readiness
 
-System Admins can open `/system-admin/rag` to upload a PDF, TXT, or Markdown FAQ source, inspect the extracted chunks, choose a category, and explicitly approve the embedding request. The page calls authenticated Pulse360 proxy routes under `/api/system-admin/rag/*`.
+System Admins can open `/system-admin/rag` to upload a PDF, TXT, or Markdown FAQ source, inspect extracted chunks, choose a category, and explicitly approve the embedding request. The page calls authenticated Pulse360 proxy routes under `/api/system-admin/rag/*`. Treat the Supabase pgvector pipeline as unverified until the companion service successfully writes a document and chunks and `/ask` returns grounded results.
 
-The current companion RAG implementation still requires Qdrant in its ingestion storage path. Before treating the page as a production Supabase pgvector pipeline, migrate that service to write `rag.collections`, `rag.documents`, and `rag.document_chunks`, pass category metadata through the commit endpoint, and verify retrieval using `rag.match_document_chunks`. Google Drive synchronization remains a future connector for maintaining governed source files in one folder.
+Google Drive synchronization is a future source connector. The upload UI alone does not prove that embeddings are committed or searchable.
 
 ## GitHub Actions
 
-The CI workflow runs on pull requests, pushes to `main`, and manual dispatch. It starts a PostgreSQL service container, applies Prisma migrations, then type-checks, lints, and builds the app.
+The CI workflow runs on pull requests, pushes to `main`, and manual dispatch. It starts a PostgreSQL service container, applies Prisma migrations, type-checks, runs lint as an advisory step, and builds the app.
 
 For safer production deploys, enable branch protection on `main` and require the `CI / build` check before merging. Render is configured with `autoDeployTrigger: checksPass`, so deploys from `main` wait for CI to pass.
 
@@ -33,9 +33,9 @@ For safer production deploys, enable branch protection on `main` and require the
 
 Render is configured to call `/api/health`. The endpoint verifies both the app and database connection.
 
-## Verified Production Deployment
+## Production Deployment Baseline
 
-The current production deployment was verified after the homepage integration and root-route update:
+The production root route and Supabase cutover were verified in September 2026. This is a historical baseline, not a live health check; confirm the latest release in Render's deploy history.
 
 ```text
 All migrations have been successfully applied.
