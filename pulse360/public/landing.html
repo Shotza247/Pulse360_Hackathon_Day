@@ -121,6 +121,14 @@
     .price li:before { content: "✓"; display: inline-block; width: 20px; color: var(--teal); font-weight: 900; }
     .price .btn { width: 100%; margin-top: auto; text-align: center; }
     .signup-layout { display: grid; grid-template-columns: .85fr 1.15fr; gap: 42px; align-items: start; }
+    .signup-dialog { width: min(960px, calc(100% - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 0; overflow: auto; border: 0; border-radius: 10px; color: inherit; background: transparent; }
+    .signup-dialog::backdrop { background: rgba(13, 26, 45, .62); backdrop-filter: blur(3px); }
+    .signup-dialog-shell { position: relative; padding: 42px 30px 30px; border: 1px solid var(--line); border-radius: 10px; background: white; box-shadow: 0 24px 70px rgba(13,26,45,.28); }
+    .signup-dialog .signup-layout { gap: 32px; }
+    .signup-dialog .signup-form { padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+    .signup-dialog-close { position: absolute; top: 12px; right: 12px; display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--navy); background: white; font-size: 22px; line-height: 1; cursor: pointer; }
+    .signup-dialog-close:hover { border-color: var(--blue); color: var(--blue); }
+    .signup-dialog-close:focus-visible { outline: 3px solid rgba(45,112,216,.28); outline-offset: 2px; }
     .signup-copy h2 { margin: 11px 0 12px; color: var(--navy); font-size: 35px; line-height: 1.08; letter-spacing: -.045em; }
     .signup-copy p { max-width: 430px; margin: 0; color: var(--muted); }
     .signup-points { display: grid; gap: 12px; margin: 28px 0 0; padding: 0; list-style: none; color: #536176; font-size: 13px; }
@@ -136,6 +144,7 @@
     .plan-selectors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .plan-option { position: relative; padding: 12px 9px; border: 1px solid #d7dee8; border-radius: 6px; color: #536176; background: white; text-align: left; }
     .plan-option:hover, .plan-option.selected { border-color: var(--blue); color: var(--navy); background: #f4f8ff; }
+    .plan-option:focus-visible { outline: 3px solid rgba(45,112,216,.28); outline-offset: 2px; }
     .plan-option strong, .plan-option small { display: block; }
     .plan-option strong { font-size: 12px; }
     .plan-option small { margin-top: 3px; color: #8b97a8; font-size: 10px; }
@@ -232,6 +241,8 @@
       .form-grid { grid-template-columns: 1fr; }
       .field.full { grid-column: auto; }
       .pricing-head, .cta .wrap, footer .wrap { align-items: flex-start; flex-direction: column; }
+      .signup-dialog-shell { padding: 50px 18px 22px; }
+      .signup-dialog .signup-layout { gap: 24px; }
       .app-preview { grid-template-columns: 86px 1fr; }
       .side-preview { padding: 14px 8px; }
       .content-preview { padding: 13px; }
@@ -280,9 +291,40 @@
 
     <section class="section" id="analytics"><div class="wrap"><div class="section-heading"><div class="eyebrow"><span></span>Insight by audience</div><h2>Different teams. Different decisions. One shared view.</h2><p>Pulse360 separates analytics by purpose so every stakeholder sees information that helps them act on capability, contribution, adoption, and growth.</p></div><div class="audience-grid"><article class="audience-card stakeholders"><div class="audience-kicker">Leadership and stakeholders</div><h3>Business health</h3><p>A concise view of workforce capability, contribution, platform adoption, and organizational momentum.</p><ul><li>Participation and completion trends</li><li>Department-level engagement patterns</li><li>High-level talent and retention signals</li><li>Skills aligned to strategic initiatives</li></ul><div class="audience-value">Value: make informed hiring, growth, investment, and internal-tool decisions without exposing individual review content.</div></article><article class="audience-card hr"><div class="audience-kicker">HR department</div><h3>People and talent insight</h3><p>HR gets the deeper organizational context needed to improve hiring, performance, fairness, development, and retention.</p><ul><li>Competency and performance patterns</li><li>Demographic and inclusion reporting</li><li>Talent development and promotion signals</li><li>Employee contribution recognition</li></ul><div class="audience-value">Value: place the right skills in the right opportunities and build stronger people practices.</div></article><article class="audience-card ops"><div class="audience-kicker">Operations department</div><h3>Workflow and adoption health</h3><p>Operations sees whether teams are adopting Pulse360, where workflows slow down, and which internal initiatives need attention.</p><ul><li>Platform usage and adoption trends</li><li>Approval bottlenecks and overdue actions</li><li>Manager workload and team coverage</li><li>Feedback to improve internal tools and initiatives</li></ul><div class="audience-value">Value: improve platform adoption, remove process friction, and make internal operations more effective.</div></article></div></div></section>
 
-    <section class="section" id="pricing"><div class="wrap"><div class="pricing-head"><div class="section-heading" style="margin:0"><div class="eyebrow"><span></span>Plans that grow with you</div><h2>Start small. Build momentum.</h2><p>Choose the level of structure and insight your organization needs today.</p></div><div class="billing"><span>Choose billing period</span><button type="button" id="billingToggle">Monthly</button><small class="currency-note" id="currencyNote">Prices shown in USD</small></div></div><div class="price-grid"><article class="price"><h3>Free</h3><p>For small teams ready to make feedback a habit.</p><div class="amount" id="freePrice">$0 <small>forever</small></div><ul><li>Up to 59 employees</li><li>Core review cycles</li><li>Nominations and approvals</li><li>Basic results and reports</li></ul><a class="btn btn-ghost" href="#signup">Start free</a></article><article class="price featured"><span class="tag">Most useful</span><h3>Basic</h3><p>For growing teams that want deeper HR visibility.</p><div class="amount"><span id="basicPrice">$49</span> <small id="basicCadence">/ month</small></div><ul><li>Up to 149 employees</li><li>Historical analytics</li><li>PDF reports and exports</li><li>Advanced AI add-ons</li></ul><a class="btn btn-primary" href="#signup">Choose Basic</a></article><article class="price"><h3>Premium</h3><p>For established teams that need richer insight and control.</p><div class="amount"><span id="premiumPrice">$99</span> <small id="premiumCadence">/ month</small></div><ul><li>Up to 499 employees</li><li>Advanced HR and Ops analytics</li><li>Expanded AI and reporting</li><li>Priority support</li></ul><a class="btn btn-ghost" href="#signup">Choose Premium</a></article><article class="price"><h3>Enterprise</h3><p>For organizations that need scale, support, and control.</p><div class="amount">Let&apos;s talk</div><ul><li>500+ employees</li><li>Custom integrations</li><li>Governance and support</li><li>Implementation guidance</li></ul><a class="btn btn-dark" href="#signup">Contact us</a></article></div></div></section>
+    <section class="section" id="pricing"><div class="wrap"><div class="pricing-head"><div class="section-heading" style="margin:0"><div class="eyebrow"><span></span>Plans that grow with you</div><h2>Start small. Build momentum.</h2><p>Choose the level of structure and insight your organization needs today.</p></div><div class="billing"><span>Choose billing period</span><button type="button" id="billingToggle">Monthly</button><small class="currency-note" id="currencyNote">Prices shown in USD</small></div></div><div class="price-grid"><article class="price"><h3>Free</h3><p>For small teams ready to make feedback a habit.</p><div class="amount" id="freePrice">$0 <small>forever</small></div><ul><li>Up to 59 employees</li><li>Core review cycles</li><li>Nominations and approvals</li><li>Basic results and reports</li></ul><a class="btn btn-ghost" href="#signup" data-plan="Free">Start free</a></article><article class="price featured"><span class="tag">Most useful</span><h3>Basic</h3><p>For growing teams that want deeper HR visibility.</p><div class="amount"><span id="basicPrice">$49</span> <small id="basicCadence">/ month</small></div><ul><li>Up to 149 employees</li><li>Historical analytics</li><li>PDF reports and exports</li><li>Advanced AI add-ons</li></ul><a class="btn btn-primary" href="#signup" data-plan="Basic">Choose Basic</a></article><article class="price"><h3>Premium</h3><p>For established teams that need richer insight and control.</p><div class="amount"><span id="premiumPrice">$99</span> <small id="premiumCadence">/ month</small></div><ul><li>Up to 499 employees</li><li>Advanced HR and Ops analytics</li><li>Expanded AI and reporting</li><li>Priority support</li></ul><a class="btn btn-ghost" href="#signup" data-plan="Premium">Choose Premium</a></article><article class="price"><h3>Enterprise</h3><p>For organizations that need scale, support, and control.</p><div class="amount">Let&apos;s talk</div><ul><li>500+ employees</li><li>Custom integrations</li><li>Governance and support</li><li>Implementation guidance</li></ul><a class="btn btn-dark" href="#signup" data-plan="Enterprise">Contact us</a></article></div></div></section>
 
-    <section class="section soft" id="signup"><div class="wrap signup-layout"><div class="signup-copy"><div class="eyebrow"><span></span>Company onboarding</div><h2>Bring your organization into the conversation.</h2><p>Tell us about your company and select a team size. Pulse360 recommends the right plan automatically, so you can explore the best starting point before guided onboarding.</p><ul class="signup-points"><li>Plan is selected by employee count</li><li>Compare monthly and annual billing</li><li>Designed for HR-led rollout</li><li>Start with a guided review cycle</li></ul></div><form class="signup-form" onsubmit="return false"><div class="form-grid"><div class="field"><label for="companyName">Company name</label><input id="companyName" type="text" placeholder="e.g. Pulse Technologies"></div><div class="field"><label for="workEmail">Work email</label><input id="workEmail" type="email" placeholder="you@company.com"></div><div class="field full"><label for="employeeCount">Number of employees</label><select id="employeeCount"><option value="">Select a range</option><option value="free">1–59 employees</option><option value="basic">60–149 employees</option><option value="premium">150–499 employees</option><option value="enterprise">500+ employees</option></select></div></div><span class="form-label">Recommended plan</span><div class="plan-selectors"><button type="button" class="plan-option" data-plan="Free"><strong>Free</strong><small>Up to 59 employees</small><span class="plan-tip">Core cycles, nominations, approvals, and basic reporting.</span></button><button type="button" class="plan-option" data-plan="Basic"><strong>Basic</strong><small>Up to 149 employees</small><span class="plan-tip">Historical analytics, exports, and advanced AI add-ons.</span></button><button type="button" class="plan-option" data-plan="Premium"><strong>Premium</strong><small>Up to 499 employees</small><span class="plan-tip">Advanced HR and Operations analytics with priority support.</span></button><button type="button" class="plan-option" data-plan="Enterprise"><strong>Enterprise</strong><small>500+ employees</small><span class="plan-tip">Custom integrations, governance, support, and implementation guidance.</span></button></div><div class="audience-value" id="signupSummary">Select your employee count to see the recommended plan and pricing.</div><span class="form-label">Billing preference</span><div class="billing-options"><button type="button" class="billing-option selected" data-billing="Monthly"><strong>Monthly</strong><small>Flexible month-to-month billing</small></button><button type="button" class="billing-option" data-billing="Annual"><strong>Annual</strong><small>Lower effective monthly rate</small></button></div><button class="btn btn-primary" type="submit" id="signupButton">Choose your employee range</button><p class="form-note" id="signupNote">Plan exploration is available now; account onboarding and payment are completed with our team.</p></form></div></section>
+    <dialog class="signup-dialog" id="signupDialog" aria-labelledby="signupTitle">
+      <div class="signup-dialog-shell">
+        <button class="signup-dialog-close" id="signupClose" type="button" aria-label="Close company onboarding">×</button>
+        <div class="signup-layout">
+          <div class="signup-copy">
+            <div class="eyebrow"><span></span>Company onboarding</div>
+            <h2 id="signupTitle">Bring your organization into the conversation.</h2>
+            <p>Tell us about your company and select a team size. Pulse360 recommends the right plan automatically, so you can explore the best starting point before guided onboarding.</p>
+            <ul class="signup-points"><li>Plan is selected by employee count</li><li>Compare monthly and annual billing</li><li>Designed for HR-led rollout</li><li>Start with a guided review cycle</li></ul>
+          </div>
+          <form class="signup-form" onsubmit="return false">
+            <div class="form-grid">
+              <div class="field"><label for="companyName">Company name</label><input id="companyName" type="text" placeholder="e.g. Pulse Technologies"></div>
+              <div class="field"><label for="workEmail">Work email</label><input id="workEmail" type="email" placeholder="you@company.com"></div>
+              <div class="field full"><label for="employeeCount">Number of employees</label><select id="employeeCount"><option value="">Select a range</option><option value="free">1–59 employees</option><option value="basic">60–149 employees</option><option value="premium">150–499 employees</option><option value="enterprise">500+ employees</option></select></div>
+            </div>
+            <span class="form-label">Recommended plan</span>
+            <div class="plan-selectors">
+              <button type="button" class="plan-option" data-plan="Free" aria-pressed="false"><strong>Free</strong><small>Up to 59 employees</small><span class="plan-tip">Core cycles, nominations, approvals, and basic reporting.</span></button>
+              <button type="button" class="plan-option" data-plan="Basic" aria-pressed="false"><strong>Basic</strong><small>Up to 149 employees</small><span class="plan-tip">Historical analytics, exports, and advanced AI add-ons.</span></button>
+              <button type="button" class="plan-option" data-plan="Premium" aria-pressed="false"><strong>Premium</strong><small>Up to 499 employees</small><span class="plan-tip">Advanced HR and Operations analytics with priority support.</span></button>
+              <button type="button" class="plan-option" data-plan="Enterprise" aria-pressed="false"><strong>Enterprise</strong><small>500+ employees</small><span class="plan-tip">Custom integrations, governance, support, and implementation guidance.</span></button>
+            </div>
+            <div class="audience-value" id="signupSummary">Select a plan or employee range to see pricing.</div>
+            <span class="form-label">Billing preference</span>
+            <div class="billing-options"><button type="button" class="billing-option selected" data-billing="Monthly"><strong>Monthly</strong><small>Flexible month-to-month billing</small></button><button type="button" class="billing-option" data-billing="Annual"><strong>Annual</strong><small>15% off the total of 12 monthly payments</small></button></div>
+            <button class="btn btn-primary" type="submit" id="signupButton">Choose your plan</button>
+            <p class="form-note" id="signupNote">Plan exploration is available now; account onboarding and payment are completed with our team.</p>
+          </form>
+        </div>
+      </div>
+    </dialog>
 
     <section class="section"><div class="wrap"><div class="section-heading"><div class="eyebrow"><span></span>What happens after signup</div><h2>From workspace creation to your first useful cycle.</h2><p>Give HR a guided path from organization setup to adoption, without asking them to configure everything at once.</p></div><div class="onboarding-steps"><article class="onboarding-step"><span>01</span><strong>Create workspace</strong><p>Register the organization and owner account.</p></article><article class="onboarding-step"><span>02</span><strong>Verify email</strong><p>Confirm the work email and secure access.</p></article><article class="onboarding-step"><span>03</span><strong>Import employees</strong><p>Bulk import an approved employee CSV or add people manually.</p></article><article class="onboarding-step"><span>04</span><strong>Map organization</strong><p>Review departments, roles, grades, and managers.</p></article><article class="onboarding-step"><span>05</span><strong>Invite teams</strong><p>Invite HR, Operations, managers, and employees.</p></article><article class="onboarding-step"><span>06</span><strong>Launch cycle</strong><p>Create the first review cycle and monitor adoption.</p></article></div></div></section>
 
@@ -339,6 +381,8 @@
     renderPublicPricing();
     let selectedPlan = '';
     let selectedBilling = 'Monthly';
+    const signupDialog = document.getElementById('signupDialog');
+    const signupClose = document.getElementById('signupClose');
     const signupButton = document.getElementById('signupButton');
     const signupSummary = document.getElementById('signupSummary');
     const planDetails = {
@@ -348,27 +392,49 @@
       Enterprise: { range: '500+ employees', monthlyUsd: null, annualUsd: null }
     };
     const planForRange = { free: 'Free', basic: 'Basic', premium: 'Premium', enterprise: 'Enterprise' };
+    const rangeForPlan = { Free: 'free', Basic: 'basic', Premium: 'premium', Enterprise: 'enterprise' };
     function updateSignupPlan() {
       const details = planDetails[selectedPlan];
       if (!details) return;
-      document.querySelectorAll('.plan-option').forEach((item) => item.classList.toggle('selected', item.dataset.plan === selectedPlan));
+      document.querySelectorAll('.plan-option').forEach((item) => {
+        const isSelected = item.dataset.plan === selectedPlan;
+        item.classList.toggle('selected', isSelected);
+        item.setAttribute('aria-pressed', String(isSelected));
+      });
       const price = selectedPlan === 'Enterprise' ? 'Let\'s talk' : money(selectedBilling === 'Annual' ? details.annualUsd : details.monthlyUsd);
       const cadence = selectedPlan === 'Free' ? 'forever' : selectedPlan === 'Enterprise' ? 'custom pricing' : selectedBilling === 'Annual' ? '/ year' : '/ month';
       signupSummary.textContent = `${selectedPlan} · ${details.range} · ${price} ${cadence}`;
       signupButton.textContent = selectedPlan === 'Enterprise' ? 'Contact us about Enterprise' : `Continue with ${selectedPlan}`;
     }
+    function openSignupDialog(plan = '') {
+      if (planDetails[plan]) {
+        selectedPlan = plan;
+        document.getElementById('employeeCount').value = rangeForPlan[plan];
+        updateSignupPlan();
+      }
+      signupDialog.showModal();
+    }
+    document.querySelectorAll('a[href="#signup"]').forEach((link) => link.addEventListener('click', (event) => {
+      event.preventDefault();
+      openSignupDialog(link.dataset.plan || '');
+    }));
+    signupClose.addEventListener('click', () => signupDialog.close());
+    signupDialog.addEventListener('click', (event) => {
+      if (event.target === signupDialog) signupDialog.close();
+    });
     document.getElementById('employeeCount').addEventListener('change', (event) => {
       selectedPlan = planForRange[event.target.value] || '';
       if (selectedPlan) updateSignupPlan();
       else {
-        signupSummary.textContent = 'Select your employee count to see the recommended plan and pricing.';
-        signupButton.textContent = 'Choose your employee range';
-        document.querySelectorAll('.plan-option').forEach((item) => item.classList.remove('selected'));
+        signupSummary.textContent = 'Select a plan or employee range to see pricing.';
+        signupButton.textContent = 'Choose your plan';
+        document.querySelectorAll('.plan-option').forEach((item) => {
+          item.classList.remove('selected');
+          item.setAttribute('aria-pressed', 'false');
+        });
       }
     });
     document.querySelectorAll('.plan-option').forEach((button) => button.addEventListener('click', () => {
-      if (!selectedPlan) return;
-      const rangeForPlan = { Free: 'free', Basic: 'basic', Premium: 'premium', Enterprise: 'enterprise' };
       document.getElementById('employeeCount').value = rangeForPlan[button.dataset.plan];
       selectedPlan = button.dataset.plan;
       updateSignupPlan();
