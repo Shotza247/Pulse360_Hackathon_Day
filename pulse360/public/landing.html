@@ -110,8 +110,11 @@
     .billing button { padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; color: var(--blue); background: white; font-size: 12px; font-weight: 800; }
     .currency-note { display: block; margin-top: 7px; color: #8b97a8; font-size: 10px; font-weight: 500; }
     .price-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: stretch; }
-    .price { position: relative; display: flex; flex-direction: column; padding: 27px; border: 1px solid var(--line); border-radius: 9px; background: white; }
-    .price.featured { border: 2px solid var(--blue); box-shadow: 0 14px 30px rgba(45,112,216,.11); }
+    .price { --tilt-x: 0deg; --tilt-y: 0deg; --lift: 0px; position: relative; display: flex; flex-direction: column; padding: 27px; border: 1px solid var(--line); border-radius: 9px; background: white; transform: perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateY(var(--lift)); transform-style: preserve-3d; transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease; }
+    .price:hover, .price:focus-within { --lift: -5px; z-index: 2; border-color: var(--blue); box-shadow: 0 18px 34px rgba(45,112,216,.16); }
+    .price.featured { border: 1px solid var(--line); box-shadow: none; }
+    .price.featured:hover, .price.featured:focus-within { border-color: var(--blue); box-shadow: 0 18px 34px rgba(45,112,216,.16); }
+    @media (prefers-reduced-motion: reduce) { .price { transform: none; transition: none; } }
     .tag { position: absolute; top: -12px; right: 20px; padding: 4px 9px; border-radius: 999px; color: white; background: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
     .price h3 { margin: 0; color: var(--navy); font-size: 20px; }
     .price > p { min-height: 44px; margin: 8px 0 20px; color: var(--muted); font-size: 13px; }
@@ -379,6 +382,21 @@
       renderPublicPricing();
     });
     renderPublicPricing();
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.querySelectorAll('.price').forEach((card) => {
+        card.addEventListener('pointermove', (event) => {
+          const bounds = card.getBoundingClientRect();
+          const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+          const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+          card.style.setProperty('--tilt-x', `${(-y * 4).toFixed(2)}deg`);
+          card.style.setProperty('--tilt-y', `${(x * 4).toFixed(2)}deg`);
+        });
+        card.addEventListener('pointerleave', () => {
+          card.style.setProperty('--tilt-x', '0deg');
+          card.style.setProperty('--tilt-y', '0deg');
+        });
+      });
+    }
     let selectedPlan = '';
     let selectedBilling = 'Monthly';
     const signupDialog = document.getElementById('signupDialog');
@@ -562,7 +580,8 @@
         });
       } catch (error) {
         row.remove();
-        addChatbotMessage(`Pulse360 FAQ API error: ${error.message}`, false);
+        console.error('Pulse360 FAQ assistant request failed:', error);
+        addChatbotMessage("We're still getting the Pulse360 FAQ Assistant ready. We're working on this feature, so please check back soon! :)", false);
       } finally {
         chatbotSend.disabled = false;
         chatbotInput.disabled = false;
