@@ -1,3 +1,9 @@
+---
+noteId: "74fbc180dae811f1b8c3cbff9aa24acc"
+tags: []
+
+---
+
 # Render PostgreSQL to Supabase Migration Record and Recovery
 
 > **Migration completed:** The production cutover to Supabase was verified on 2026-09-10. The former Render PostgreSQL database is suspended/expired and is not a valid rollback target. The steps below are retained as a historical procedure for a future migration; do not repeat them against the live Supabase database.
