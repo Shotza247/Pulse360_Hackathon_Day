@@ -6,7 +6,8 @@ type DocumentRow = {
   id: string;
   filename: string;
   chunks: number;
-  created: number;
+  category?: string | null;
+  created?: number | null;
 };
 
 type Preview = {
@@ -23,6 +24,16 @@ type Preview = {
 type Stage = "idle" | "previewing" | "ready" | "embedding" | "success" | "error";
 
 const categories = ["platform", "pricing", "privacy", "security", "onboarding", "analytics", "billing", "support"];
+
+// The RAG API returns errors as { error } (Pulse360 proxy), { detail: "text" },
+// or { detail: { message, request_id } } (RAG service 4xx/5xx).
+function errorMessage(data: unknown, fallback: string) {
+  const payload = (data ?? {}) as { error?: unknown; detail?: unknown };
+  if (typeof payload.error === "string") return payload.error;
+  if (typeof payload.detail === "string") return payload.detail;
+  const nested = (payload.detail as { message?: unknown } | null | undefined)?.message;
+  return typeof nested === "string" ? nested : fallback;
+}
 
 function formatDate(value: number) {
   return new Date(value * 1000).toLocaleString("en-ZA", {
@@ -85,7 +96,7 @@ export default function RagIngestionWorkspace() {
     try {
       const response = await fetch("/api/system-admin/rag/preview", { method: "POST", body });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? data.detail ?? "Preview failed.");
+      if (!response.ok) throw new Error(errorMessage(data, "Preview failed."));
       setPreview(data);
       setStage("ready");
     } catch (error) {
@@ -105,7 +116,7 @@ export default function RagIngestionWorkspace() {
         body: JSON.stringify({ preview_id: preview.preview_id, approved: true, category }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? data.detail ?? "Embedding failed.");
+      if (!response.ok) throw new Error(errorMessage(data, "Embedding failed."));
       setStage("success");
       setMessage(data.status === "already_stored" ? "This document is already committed." : "Document embedded and committed successfully.");
       await loadDocuments();
@@ -180,7 +191,7 @@ export default function RagIngestionWorkspace() {
         </section>
       </div>
 
-      <section className="rounded-xl border border-gray-200 bg-white p-6"><div className="mb-4 flex items-end justify-between gap-4"><div><h2 className="text-base font-bold text-gray-950">Committed FAQ sources</h2><p className="mt-1 text-sm text-gray-500">Only committed documents are searchable by the FAQ Assistant.</p></div><button type="button" onClick={() => void loadDocuments()} className="text-sm font-bold text-blue-700 hover:text-blue-900">Refresh library</button></div>{documents.length === 0 ? <div className="rounded-lg bg-gray-50 p-5 text-sm text-gray-500">No committed FAQ sources have been found yet.</div> : <div className="divide-y divide-gray-100">{documents.map((document) => <div key={document.id} className="flex flex-col justify-between gap-2 py-3 sm:flex-row sm:items-center"><div><p className="text-sm font-bold text-gray-900">{document.filename}</p><p className="mt-1 text-xs text-gray-500">Document {document.id.slice(0, 12)} · {formatDate(document.created)}</p></div><span className="w-fit rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">{document.chunks} chunks · committed</span></div>)}</div>}</section>
+      <section className="rounded-xl border border-gray-200 bg-white p-6"><div className="mb-4 flex items-end justify-between gap-4"><div><h2 className="text-base font-bold text-gray-950">Committed FAQ sources</h2><p className="mt-1 text-sm text-gray-500">Only committed documents are searchable by the FAQ Assistant.</p></div><button type="button" onClick={() => void loadDocuments()} className="text-sm font-bold text-blue-700 hover:text-blue-900">Refresh library</button></div>{documents.length === 0 ? <div className="rounded-lg bg-gray-50 p-5 text-sm text-gray-500">No committed FAQ sources have been found yet.</div> : <div className="divide-y divide-gray-100">{documents.map((document) => <div key={document.id} className="flex flex-col justify-between gap-2 py-3 sm:flex-row sm:items-center"><div><p className="text-sm font-bold text-gray-900">{document.filename}</p><p className="mt-1 text-xs text-gray-500">Document {document.id.slice(0, 12)}{document.category ? ` · ${document.category}` : ""}{document.created ? ` · ${formatDate(document.created)}` : ""}</p></div><span className="w-fit rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">{document.chunks} chunks · committed</span></div>)}</div>}</section>
     </div>
   );
 }
