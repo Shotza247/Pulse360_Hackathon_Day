@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
-import { callRagApi, forwardRagResponse, RAG_COLLECTION_ID } from "@/lib/rag-api";
+import { callRagApi, forwardRagResponse, RAG_CATEGORIES, RAG_COLLECTION_ID } from "@/lib/rag-api";
 
 export const runtime = "nodejs";
 
@@ -19,11 +19,16 @@ export async function POST(request: Request) {
     );
   }
 
+  const category = body.category ?? "platform";
+  if (!(RAG_CATEGORIES as readonly string[]).includes(category)) {
+    return NextResponse.json({ error: "Choose a valid FAQ category." }, { status: 400 });
+  }
+
   try {
     const response = await callRagApi(`/collections/${RAG_COLLECTION_ID}/documents`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ preview_id: body.preview_id, approved: true }),
+      body: JSON.stringify({ preview_id: body.preview_id, approved: true, category }),
     });
     return forwardRagResponse(response);
   } catch (error) {

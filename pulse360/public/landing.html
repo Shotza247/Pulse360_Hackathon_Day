@@ -488,13 +488,12 @@
       event.preventDefault();
       if (chatbotInput.value.trim()) chatbotForm.requestSubmit();
     });
-    const RAG_API_ENDPOINT = 'http://127.0.0.1:8767/ask';
-    const RAG_COLLECTION_ID = 'pulse360_faq';
+    const RAG_API_ENDPOINT = '/api/faq/ask'; // same-origin proxy; server pins the collection
     async function askPulse360(question) {
       const response = await fetch(RAG_API_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, collection_id: RAG_COLLECTION_ID })
+        body: JSON.stringify({ question })
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {

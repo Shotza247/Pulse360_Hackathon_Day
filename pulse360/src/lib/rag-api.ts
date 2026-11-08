@@ -1,17 +1,40 @@
 export const RAG_COLLECTION_ID = "pulse360_faq";
 
+// Keep in sync with the category picker in RagIngestionWorkspace.
+export const RAG_CATEGORIES = [
+  "platform",
+  "pricing",
+  "privacy",
+  "security",
+  "onboarding",
+  "analytics",
+  "billing",
+  "support",
+] as const;
+
 export function getRagApiUrl() {
   return process.env.RAG_API_URL?.replace(/\/$/, "") ?? "";
 }
 
+/**
+ * Calls the companion RAG API from the server. Library routes (`/collections/*`)
+ * require the admin key; public routes (`/ask`, `/search`) ignore it.
+ */
 export async function callRagApi(path: string, init: RequestInit = {}) {
   const baseUrl = getRagApiUrl();
   if (!baseUrl) {
     throw new Error("RAG_API_URL is not configured on the Pulse360 server.");
   }
 
+  const headers = new Headers(init.headers);
+  const adminKey = process.env.RAG_ADMIN_API_KEY;
+  if (adminKey && path.startsWith("/collections")) {
+    headers.set("X-API-Key", adminKey);
+  }
+
   return fetch(`${baseUrl}${path}`, {
     ...init,
+    headers,
     signal: init.signal ?? AbortSignal.timeout(30_000),
   });
 }
