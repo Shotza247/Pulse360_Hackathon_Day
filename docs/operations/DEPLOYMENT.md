@@ -30,7 +30,7 @@ Integration status (see [RAG Integration Fix Plan](RAG_INTEGRATION_FIX_PLAN.md) 
 | API contract between Pulse360 and the RAG API | Reviewed and matching (upload, preview, commit, `/ask`) |
 | Query authentication and collection allowlist (`QUERY_API_KEY`, `PUBLIC_COLLECTIONS`) | Implemented, offline tests pass, not yet deployed |
 | Per-visitor rate limiting (RAG API and `/api/faq/ask`) | Implemented, offline tests pass, not yet deployed |
-| Upload size limits vs Vercel body cap, request timeouts | Open (fixes 3 and 4) |
+| Upload size limit (4 MB, fits Vercel body cap) and per-call timeouts | Implemented, offline tests pass, not yet deployed |
 | Live smoke test against Supabase, Vercel and Render | Not yet run |
 
 Deploy order: set the variables on both platforms, merge and deploy the RAG API first, then merge Pulse360. The RAG API fails closed (401) on `/ask` and `/search` when `APP_ENV` is not `local` and `QUERY_API_KEY` is missing.

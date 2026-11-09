@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { getClientIp, getTrustedProxyHops } from "@/lib/client-ip";
 import { createRateLimiter } from "@/lib/rate-limit";
-import { callRagApi, forwardRagResponse, RAG_COLLECTION_ID } from "@/lib/rag-api";
+import {
+  callRagApi,
+  forwardRagResponse,
+  isRagTimeout,
+  RAG_ASK_TIMEOUT_MS,
+  RAG_COLLECTION_ID,
+} from "@/lib/rag-api";
 
 export const runtime = "nodejs";
 
@@ -36,13 +42,23 @@ export async function POST(request: Request) {
   if (clientIp) headers["X-Forwarded-Client-IP"] = clientIp;
 
   try {
-    const response = await callRagApi("/ask", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ question, collection_id: RAG_COLLECTION_ID }),
-    });
+    const response = await callRagApi(
+      "/ask",
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ question, collection_id: RAG_COLLECTION_ID }),
+      },
+      RAG_ASK_TIMEOUT_MS,
+    );
     return forwardRagResponse(response);
-  } catch {
+  } catch (error) {
+    if (isRagTimeout(error)) {
+      return NextResponse.json(
+        { detail: { message: "The assistant took too long to answer. Please try again." } },
+        { status: 504 },
+      );
+    }
     return NextResponse.json(
       { detail: { message: "The assistant is temporarily unavailable." } },
       { status: 503 },
