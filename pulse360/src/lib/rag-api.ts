@@ -18,7 +18,8 @@ export function getRagApiUrl() {
 
 /**
  * Calls the companion RAG API from the server. Library routes (`/collections/*`)
- * require the admin key; public routes (`/ask`, `/search`) ignore it.
+ * require the admin key; query routes (`/ask`, `/search`) require a separate
+ * query key. Each key is sent only to the routes it belongs to.
  */
 export async function callRagApi(path: string, init: RequestInit = {}) {
   const baseUrl = getRagApiUrl();
@@ -28,8 +29,11 @@ export async function callRagApi(path: string, init: RequestInit = {}) {
 
   const headers = new Headers(init.headers);
   const adminKey = process.env.RAG_ADMIN_API_KEY;
+  const queryKey = process.env.RAG_QUERY_API_KEY;
   if (adminKey && path.startsWith("/collections")) {
     headers.set("X-API-Key", adminKey);
+  } else if (queryKey && (path.startsWith("/ask") || path.startsWith("/search"))) {
+    headers.set("X-API-Key", queryKey);
   }
 
   return fetch(`${baseUrl}${path}`, {

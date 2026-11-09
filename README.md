@@ -248,6 +248,7 @@ Production app: **https://pulse360-gkt8.onrender.com**
 | `OPENAI_API_KEY` | ⚠️ Optional | Enables live AI Comment Suggestions, Theme Summary, Improvement Plan, and PDF Report narrative. App falls back to realistic stub responses if not set. |
 | `RAG_API_URL` | ⚠️ Required for FAQ ingestion and the FAQ assistant | Server-side base URL for the companion RAG API. Use `http://127.0.0.1:8767` locally; use the deployed RAG API URL in Render/Vercel. Never expose this as a browser-side secret. |
 | `RAG_ADMIN_API_KEY` | ⚠️ Required for FAQ ingestion | Must match `ADMIN_API_KEY` on the RAG API. Sent server-side as `X-API-Key` on `/collections/*` calls only. Never prefix with `NEXT_PUBLIC_`. |
+| `RAG_QUERY_API_KEY` | ⚠️ Required for the FAQ assistant | Must match `QUERY_API_KEY` on the RAG API (use a different secret from the admin key). Sent server-side as `X-API-Key` on `/ask` and `/search` calls only. Never prefix with `NEXT_PUBLIC_`. |
 
 ---
 

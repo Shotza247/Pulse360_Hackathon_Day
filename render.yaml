@@ -27,3 +27,5 @@ services:
         sync: false
       - key: RAG_ADMIN_API_KEY
         sync: false
+      - key: RAG_QUERY_API_KEY
+        sync: false
