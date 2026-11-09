@@ -21,8 +21,8 @@ The browser never talks to the RAG API. Pulse360 is the only trusted caller.
 
 | # | Severity | Fix | Repo | Status |
 |---|----------|-----|------|--------|
-| 1 | Blocker | Rate limit counts every visitor as one client, because the RAG API sees only the Render server IP. Pulse360 forwards the real end-user IP and the RAG API trusts it only on requests that carry a valid server key. | both | Done (iteration B, committed on branch, not pushed) |
-| 2 | Blocker | `/ask` and `/search` are public and accept any `collection_id`, so private collections are readable. Require a server-only query key and an allowlist of collections. | both | Done (iteration A, committed on branch, not pushed) |
+| 1 | Blocker | Rate limit counts every visitor as one client, because the RAG API sees only the Render server IP. Pulse360 forwards the real end-user IP and the RAG API trusts it only on requests that carry a valid server key. | both | Done (iterations B and C, pushed on branch, awaiting deploy) |
+| 2 | Blocker | `/ask` and `/search` are public and accept any `collection_id`, so private collections are readable. Require a server-only query key and an allowlist of collections. | both | Done (iteration A, pushed on branch, awaiting deploy) |
 | 3 | Warning | Upload limits disagree. Both sides advertise 10 MB, Vercel caps request bodies near 4.5 MB (verify against current Vercel docs), and `preview()` rejects documents over 100 chunks. Pick one limit that fits all three. | both | Planned |
 | 4 | Warning | Timeouts. Pulse360 aborts after 30 s, while one `/ask` can chain embedding retries and LLM retries, and commit embeds up to 100 chunks in one call. Raise the commit timeout and bound the retries. | both | Planned |
 | 5 | Warning | Rate limiter opens a database connection and runs DDL plus a cleanup delete on every request. Move DDL to the migration, prune occasionally, and use the Supabase pooler URL. | RAG | Planned |
