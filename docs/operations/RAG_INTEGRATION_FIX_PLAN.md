@@ -23,8 +23,8 @@ The browser never talks to the RAG API. Pulse360 is the only trusted caller.
 |---|----------|-----|------|--------|
 | 1 | Blocker | Rate limit counts every visitor as one client, because the RAG API sees only the Render server IP. Pulse360 forwards the real end-user IP and the RAG API trusts it only on requests that carry a valid server key. | both | Done (iterations B and C, pushed on branch, awaiting deploy) |
 | 2 | Blocker | `/ask` and `/search` are public and accept any `collection_id`, so private collections are readable. Require a server-only query key and an allowlist of collections. | both | Done (iteration A, pushed on branch, awaiting deploy) |
-| 3 | Warning | Upload limits disagree. Both sides advertise 10 MB, Vercel caps request bodies near 4.5 MB (verify against current Vercel docs), and `preview()` rejects documents over 100 chunks. Pick one limit that fits all three. | both | Planned |
-| 4 | Warning | Timeouts. Pulse360 aborts after 30 s, while one `/ask` can chain embedding retries and LLM retries, and commit embeds up to 100 chunks in one call. Raise the commit timeout and bound the retries. | both | Planned |
+| 3 | Warning | Upload limits disagree. Both sides advertise 10 MB, Vercel caps request bodies near 4.5 MB (verify against current Vercel docs), and `preview()` rejects documents over 100 chunks. Pick one limit that fits all three. | both | Done (iteration D, committed on branch, awaiting deploy) |
+| 4 | Warning | Timeouts. Pulse360 aborts after 30 s, while one `/ask` can chain embedding retries and LLM retries, and commit embeds up to 100 chunks in one call. Raise the commit timeout and bound the retries. | both | Done (iteration D, committed on branch, awaiting deploy) |
 | 5 | Warning | Rate limiter opens a database connection and runs DDL plus a cleanup delete on every request. Move DDL to the migration, prune occasionally, and use the Supabase pooler URL. | RAG | Planned |
 | 6 | Warning | Supabase schema (`rag.collections`, `documents`, `document_chunks`, `match_document_chunks`) is not defined in either repo. Add numbered migrations so a fresh project can be rebuilt. | RAG | Planned |
 | 7 | Warning | Collection `pulse360_faq` must exist before use, and the RAG default collection is `faq_documents`. Add the creation step to the smoke test and align the defaults. | both | Planned |
@@ -90,3 +90,36 @@ Known limits:
   Render web service; move them to shared storage before scaling out.
 - If `TRUSTED_PROXY_HOPS` is set higher than the real number of proxies, the visitor falls back
   to a null IP and shares the `unknown` bucket. Keep it equal to the real proxy count.
+
+## Iteration D (fixes 3 and 4): upload limits and timeouts
+
+Found while preparing this: `get_settings()` in the RAG API could not load any numeric environment
+variable (`REQUEST_TIMEOUT`, `CONTEXT_K`, `CHUNK_CHARS`, ...). It looked field types up as strings, but
+`config.py` does not use PEP 563, so the lookup fell back to `str` and `Settings` failed with a
+`TypeError` on startup. Any real `.env` with those values would have crashed the API. Fixed with a
+regression test, and the RAG tests no longer read a developer's local `.env`.
+
+Upload limits (fix 3):
+
+- One limit everywhere: **4 MB**. Vercel rejects request bodies above roughly 4.5 MB before the
+  function runs (verify against current Vercel docs), so the old 10 MB limit failed with a platform
+  error. The RAG API (`MAX_BYTES`), the Pulse360 route and the admin UI (`src/lib/rag-limits.ts`) now
+  agree.
+- `MAX_CHUNKS = 100` is a named constant. Rejections explain themselves: too many chunks reports the
+  count and the limit and says to split the file; an empty or scanned document mentions OCR.
+
+Timeouts (fix 4):
+
+- Pulse360 uses a timeout per call instead of one 30 s value: 30 s for listings, 60 s for preview
+  and `/ask` (two upstream calls), 120 s for commit (up to 100 chunks in batches of 16). A timeout now
+  returns a 504 with a specific message instead of a generic "unavailable".
+- The RAG API caps retry waiting. Each provider call previously allowed 3 attempts of the full
+  timeout (about 93 s), so one `/ask` could take about 186 s. Retries now share a budget of two
+  request timeouts per call.
+
+Known limits:
+
+- Vercel's own function time limit depends on the plan and is not set in `vercel.json`. If commits of
+  large documents time out there, set `maxDuration` for `main.py`.
+- A commit that times out in Pulse360 may still finish on the RAG side. The admin message says to
+  refresh the document list before retrying; commit is idempotent for the same file content.

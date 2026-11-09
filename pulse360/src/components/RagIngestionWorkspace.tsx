@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { RAG_MAX_UPLOAD_BYTES, RAG_MAX_UPLOAD_LABEL } from "@/lib/rag-limits";
 
 type DocumentRow = {
   id: string;
@@ -78,9 +79,9 @@ export default function RagIngestionWorkspace() {
       setFile(null);
       return;
     }
-    if (nextFile.size > 10 * 1024 * 1024) {
+    if (nextFile.size > RAG_MAX_UPLOAD_BYTES) {
       setStage("error");
-      setMessage("The file must be 10 MB or smaller.");
+      setMessage(`The file must be ${RAG_MAX_UPLOAD_LABEL} or smaller.`);
       setFile(null);
       return;
     }
@@ -167,7 +168,9 @@ export default function RagIngestionWorkspace() {
           >
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-white text-[#0f1f3d] shadow-sm"><Icon d="M12 16V4m0 0L8 8m4-4l4 4M5 20h14a2 2 0 002-2v-4M3 14v4a2 2 0 002 2" /></div>
             <p className="mt-4 text-sm font-bold text-gray-900">{file ? file.name : "Drop a FAQ source here"}</p>
-            <p className="mt-1 text-xs text-gray-500">PDF, TXT, or Markdown · up to 10 MB · readable text only</p>
+            <p className="mt-1 text-xs text-gray-500">
+              PDF, TXT, or Markdown · up to {RAG_MAX_UPLOAD_LABEL} · readable text only
+            </p>
             <input ref={inputRef} type="file" accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown" className="hidden" onChange={(event) => chooseFile(event.target.files?.[0] ?? null)} />
             <button type="button" onClick={() => inputRef.current?.click()} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#0f1f3d] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#172d58]"> <Icon d="M12 5v14m-7-7h14" /> Choose file</button>
           </div>

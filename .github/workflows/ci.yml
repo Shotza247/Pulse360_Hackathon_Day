@@ -72,6 +72,9 @@ jobs:
       - name: Client IP unit tests
         run: npm run test:client-ip
 
+      - name: RAG client unit tests
+        run: npm run test:rag-api
+
       - name: Lint advisory
         continue-on-error: true
         run: npm run lint
