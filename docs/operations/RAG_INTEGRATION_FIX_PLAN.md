@@ -21,7 +21,7 @@ The browser never talks to the RAG API. Pulse360 is the only trusted caller.
 
 | # | Severity | Fix | Repo | Status |
 |---|----------|-----|------|--------|
-| 1 | Blocker | Rate limit counts every visitor as one client, because the RAG API sees only the Render server IP. Pulse360 forwards the real end-user IP and the RAG API trusts it only on requests that carry a valid server key. | both | Planned (iteration B) |
+| 1 | Blocker | Rate limit counts every visitor as one client, because the RAG API sees only the Render server IP. Pulse360 forwards the real end-user IP and the RAG API trusts it only on requests that carry a valid server key. | both | Done (iteration B, committed on branch, not pushed) |
 | 2 | Blocker | `/ask` and `/search` are public and accept any `collection_id`, so private collections are readable. Require a server-only query key and an allowlist of collections. | both | Done (iteration A, committed on branch, not pushed) |
 | 3 | Warning | Upload limits disagree. Both sides advertise 10 MB, Vercel caps request bodies near 4.5 MB (verify against current Vercel docs), and `preview()` rejects documents over 100 chunks. Pick one limit that fits all three. | both | Planned |
 | 4 | Warning | Timeouts. Pulse360 aborts after 30 s, while one `/ask` can chain embedding retries and LLM retries, and commit embeds up to 100 chunks in one call. Raise the commit timeout and bound the retries. | both | Planned |
@@ -56,4 +56,19 @@ Deployment note: set `APP_ENV=production` on Vercel. With the default `APP_ENV=l
 
 ## Iteration B (fix 1): per-visitor rate limit
 
-To be detailed once iteration A is merged.
+RAG API:
+
+- `/ask` and `/search` rate-limit by the visitor IP named in the `X-Forwarded-Client-IP`
+  header, but only when the caller authenticated with `QUERY_API_KEY`. The value must parse as
+  an IP address; otherwise the socket peer is used.
+- Requests without a valid query key (open local mode) are always limited by socket peer, so an
+  anonymous caller cannot pick their own bucket by rotating the header.
+
+Pulse360:
+
+- `/api/faq/ask` takes the first valid `X-Forwarded-For` entry (`src/lib/client-ip.ts`) and
+  forwards it as `X-Forwarded-Client-IP`. Unit tests: `npm run test:client-ip` (runs in CI).
+
+Known limit: a visitor can prepend their own `X-Forwarded-For` entry, which lets them choose
+their own bucket. This cannot lock out other visitors, which was the blocker. A per-IP limit in
+the Next.js route (a follow-up, not yet in the table above) would close the remaining gap.

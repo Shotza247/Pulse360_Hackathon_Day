@@ -8,6 +8,7 @@
     "start": "next start -H 0.0.0.0",
     "lint": "eslint",
     "test:analytics": "node --experimental-strip-types --test tests/system-admin-analytics.test.mjs",
+    "test:client-ip": "node --experimental-strip-types --test tests/client-ip.test.mjs",
     "typecheck": "tsc --noEmit",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node scripts/seed-database.js",

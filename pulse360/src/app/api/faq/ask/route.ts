@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getClientIp } from "@/lib/client-ip";
 import { callRagApi, forwardRagResponse, RAG_COLLECTION_ID } from "@/lib/rag-api";
 
 export const runtime = "nodejs";
@@ -16,10 +17,16 @@ export async function POST(request: Request) {
     );
   }
 
+  // The RAG API rate-limits per IP. This server is its only caller, so name the
+  // real visitor; the RAG API honours this header only when our query key is valid.
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const clientIp = getClientIp(request.headers);
+  if (clientIp) headers["X-Forwarded-Client-IP"] = clientIp;
+
   try {
     const response = await callRagApi("/ask", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ question, collection_id: RAG_COLLECTION_ID }),
     });
     return forwardRagResponse(response);
