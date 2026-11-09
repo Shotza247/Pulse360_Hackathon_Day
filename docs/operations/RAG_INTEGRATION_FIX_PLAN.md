@@ -66,9 +66,27 @@ RAG API:
 
 Pulse360:
 
-- `/api/faq/ask` takes the first valid `X-Forwarded-For` entry (`src/lib/client-ip.ts`) and
-  forwards it as `X-Forwarded-Client-IP`. Unit tests: `npm run test:client-ip` (runs in CI).
+- `/api/faq/ask` reads the visitor IP and forwards it as `X-Forwarded-Client-IP`
+  (`src/lib/client-ip.ts`). Unit tests: `npm run test:client-ip` (runs in CI).
 
-Known limit: a visitor can prepend their own `X-Forwarded-For` entry, which lets them choose
-their own bucket. This cannot lock out other visitors, which was the blocker. A per-IP limit in
-the Next.js route (a follow-up, not yet in the table above) would close the remaining gap.
+## Iteration C (remaining gap from B): forged `X-Forwarded-For` and no limit on Pulse360
+
+Iteration B took the FIRST `X-Forwarded-For` entry. A visitor can prepend entries of their own,
+so they could pick a fresh rate-limit bucket on every request, and Pulse360 itself had no limit.
+
+Pulse360:
+
+- `getClientIp` now reads the entry `TRUSTED_PROXY_HOPS` places from the END of the header
+  (default 1, for Render's load balancer). Proxies append to the list, so a client cannot forge
+  those entries. Set `TRUSTED_PROXY_HOPS=2` if a CDN such as Cloudflare is added in front.
+- `/api/faq/ask` is rate-limited in the Next.js route (`src/lib/rate-limit.ts`): 10 requests per
+  minute per visitor IP, plus a global cap of 300 per minute across all visitors. The global cap
+  bounds embedding and LLM spend even if the IP cannot be determined or is rotated. Over the limit
+  returns 429 with `Retry-After`.
+
+Known limits:
+
+- Counters are in memory, so they are per instance and reset on restart. This fits the single
+  Render web service; move them to shared storage before scaling out.
+- If `TRUSTED_PROXY_HOPS` is set higher than the real number of proxies, the visitor falls back
+  to a null IP and shares the `unknown` bucket. Keep it equal to the real proxy count.

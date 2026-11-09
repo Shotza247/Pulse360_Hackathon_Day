@@ -249,6 +249,8 @@ Production app: **https://pulse360-gkt8.onrender.com**
 | `RAG_API_URL` | ⚠️ Required for FAQ ingestion and the FAQ assistant | Server-side base URL for the companion RAG API. Use `http://127.0.0.1:8767` locally; use the deployed RAG API URL in Render/Vercel. Never expose this as a browser-side secret. |
 | `RAG_ADMIN_API_KEY` | ⚠️ Required for FAQ ingestion | Must match `ADMIN_API_KEY` on the RAG API. Sent server-side as `X-API-Key` on `/collections/*` calls only. Never prefix with `NEXT_PUBLIC_`. |
 | `RAG_QUERY_API_KEY` | ⚠️ Required for the FAQ assistant | Must match `QUERY_API_KEY` on the RAG API (use a different secret from the admin key). Sent server-side as `X-API-Key` on `/ask` and `/search` calls only. Never prefix with `NEXT_PUBLIC_`. |
+| `TRUSTED_PROXY_HOPS` | Optional (default `1`) | Number of reverse proxies in front of the app (Render's load balancer = 1; add one if a CDN such as Cloudflare is also in front). Used to read the visitor IP from the end of `X-Forwarded-For`, which a client cannot forge, for the `/api/faq/ask` rate limit. |
+
 
 ---
 
