@@ -600,6 +600,8 @@
     chatbotClose.addEventListener('click', () => { chatbotPanel.classList.remove('open'); chatbotLauncher.setAttribute('aria-expanded', 'false'); });
     chatbotPromptClose.addEventListener('click', () => chatbotPrompt.classList.remove('show'));
     window.setTimeout(() => {
+      // Wake the RAG pipeline now so the first question is answered faster. Fire and forget.
+      fetch('/api/faq/warm', { method: 'POST', keepalive: true }).catch(() => {});
       if (chatbotPanel.classList.contains('open')) return;
       chatbotPrompt.classList.add('show');
       window.setTimeout(() => chatbotPrompt.classList.remove('show'), 7000);
