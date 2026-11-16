@@ -21,15 +21,17 @@ The Blueprint starts on Render's free plans. Free web services do not support Re
 
 ## FAQ ingestion readiness
 
-System Admins can open `/system-admin/rag` to upload a PDF, TXT, or Markdown FAQ source, inspect extracted chunks, choose a category, and explicitly approve the embedding request. The page calls authenticated Pulse360 proxy routes under `/api/system-admin/rag/*`. Treat the Supabase pgvector pipeline as unverified until the companion service successfully writes a document and chunks and `/ask` returns grounded results.
+System Admins and HR Admins can access FAQ management tooling through authenticated Pulse360 proxy routes under `/api/system-admin/rag/*` governed by shared authorization tiers (`RAG_TOOL_ROLES` and `RAG_MUTATION_ROLES`). System Admins can upload a PDF, TXT, or Markdown FAQ source, inspect extracted chunks, choose a category, and explicitly approve embedding. On the landing page, the assistant automatically triggers a rate-limited background warm-up via `POST /api/faq/warm` to eliminate cold-start latency. Treat the Supabase pgvector pipeline as unverified until the companion service successfully writes a document and chunks and `/ask` returns grounded results.
 
-Integration status (see [RAG Integration Fix Plan](RAG_INTEGRATION_FIX_PLAN.md) for detail):
+Integration status (see [RAG Integration Fix Plan](RAG_INTEGRATION_FIX_PLAN.md) and [RAG Evaluation Plan](RAG_EVALUATION_TUNING_PLAN.md) for detail):
 
 | Area | Status |
 |---|---|
-| API contract between Pulse360 and the RAG API | Reviewed and matching (upload, preview, commit, `/ask`) |
+| API contract between Pulse360 and the RAG API | Reviewed and matching (upload, preview, commit, `/ask`, `/health` warm-up) |
 | Query authentication and collection allowlist (`QUERY_API_KEY`, `PUBLIC_COLLECTIONS`) | Implemented, offline tests pass, not yet deployed |
-| Per-visitor rate limiting (RAG API and `/api/faq/ask`) | Implemented, offline tests pass, not yet deployed |
+| Per-visitor rate limiting (RAG API, `/api/faq/ask`, and `/api/faq/warm`) | Implemented, offline tests pass, not yet deployed |
+| Cold-start wake-up endpoint (`/api/faq/warm`) | Implemented, debounced (2 min interval) and rate-limited |
+| Shared authorization tiering (`rag-auth.ts`, `rag-roles.ts`) | Implemented (`RAG_TOOL_ROLES`, `RAG_MUTATION_ROLES`) |
 | Upload size limit (4 MB, fits Vercel body cap) and per-call timeouts | Implemented, offline tests pass, not yet deployed |
 | Live smoke test against Supabase, Vercel and Render | Not yet run |
 
