@@ -107,16 +107,22 @@ foreach ($r in $Repos) {
 }
 
 # Entries: group by date, newest first.
+$existing = (Get-Section $text 'ENTRIES').Trim("`r", "`n")
+$groups = @($newCommits | Group-Object Date | Sort-Object Name -Descending)
+# The oldest new date can equal the newest existing date: append under that heading, do not repeat it.
+$merge = $false
+if ($groups.Count -gt 0 -and $existing.StartsWith("### $($groups[-1].Name)")) {
+    $existing = $existing.Substring("### $($groups[-1].Name)".Length).TrimStart("`r", "`n")
+    $merge = $true
+}
 $blocks = New-Object System.Text.StringBuilder
-foreach ($g in ($newCommits | Group-Object Date | Sort-Object Name -Descending)) {
+for ($i = 0; $i -lt $groups.Count; $i++) {
+    $g = $groups[$i]
     [void]$blocks.Append("### $($g.Name)`n")
     foreach ($c in $g.Group) { [void]$blocks.Append("- **[$($c.Tag)]** ``$($c.Hash)`` $($c.Subject)`n") }
-    [void]$blocks.Append("`n")
+    if (-not ($merge -and $i -eq $groups.Count - 1)) { [void]$blocks.Append("`n") }
 }
-
-$existing = (Get-Section $text 'ENTRIES').Trim("`r", "`n")
-$entries = "`n" + $blocks.ToString().TrimEnd("`n") + $(if ($existing) { "`n`n$existing" } else { '' }) + "`n"
-if (-not $blocks.Length) { $entries = "`n$existing`n" }
+$entries = "`n" + $blocks.ToString() + $existing + "`n"
 
 $text = Set-Section $text 'PENDING' ($pending.ToString().TrimEnd("`n") + "`n")
 $text = Set-Section $text 'ENTRIES' $entries

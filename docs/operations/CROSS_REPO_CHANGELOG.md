@@ -49,13 +49,14 @@ Deploy order for a feature that touches both repos: RAG API first, then Pulse360
 ## Pending (not yet in `main`)
 
 <!-- PENDING:START -->
-**pulse360** on `fix/rag-integration-hardening`: 2 commit(s) not in main, 3 uncommitted file(s).
+**pulse360** on `fix/rag-integration-hardening`: 3 commit(s) not in main, 3 uncommitted file(s).
 
+- `0748ce8` docs(rag): add cross-repo changelog ledger and sync script
 - `fa4718f` feat(rag): add shared auth tiers and update documentation
 - `a91e07a` docs(rag): mark sub-task 0 done and note ragas as an offline cross-check
+- uncommitted: `M docs/operations/CROSS_REPO_CHANGELOG.md`
 - uncommitted: `M docs/operations/RAG_EVALUATION_TUNING_PLAN.md`
-- uncommitted: `?? docs/operations/CROSS_REPO_CHANGELOG.md`
-- uncommitted: `?? scripts/`
+- uncommitted: `M scripts/sync-changelog.ps1`
 
 **rag** on `fix/rag-upload-limit-retry-budget`: 4 commit(s) not in main, 0 uncommitted file(s).
 
@@ -69,11 +70,12 @@ Deploy order for a feature that touches both repos: RAG API first, then Pulse360
 
 Newest first. Merge commits are omitted. Tags: **[pulse360]**, **[rag]**.
 
-<!-- pin:pulse360=fa4718f -->
+<!-- pin:pulse360=0748ce8 -->
 <!-- pin:rag=9cb07fc -->
 
 <!-- ENTRIES:START -->
 ### 2026-11-17
+- **[pulse360]** `0748ce8` docs(rag): add cross-repo changelog ledger and sync script
 - **[rag]** `76880a2` Box sync settup guide.
 - **[rag]** `d0d890f` Review and stabilize Supabase RAG app
 
