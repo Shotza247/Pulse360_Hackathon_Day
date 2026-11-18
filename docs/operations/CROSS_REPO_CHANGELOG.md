@@ -35,7 +35,7 @@ Status values: `pending`, `in progress`, `merged`, `deployed`. Sub-task numbers 
 | Sub-task | Feature | Pulse360 | RAG | Manual step | Status |
 |---|---|---|---|---|---|
 | 0 | Reconcile RAG branches | n/a | Branch `fix/rag-upload-limit-retry-budget` pushed on top of RAG `main` (4 MB upload limit, retry cap, test isolation). Open the PR. | Merge the PR, then redeploy the RAG API | in progress (pushed, PR not opened) |
-| 1a | HR Admin access | Committed in `fa4718f`: `rag-auth.ts`, `rag-roles.ts`, routes use the helper. Still to do: `proxy.ts` exception, sidebar entry, page role check, hide upload and delete for HR Admin. | none | none | in progress |
+| 1a | HR Admin access | Done on branch: shared role helper (a4718f); route-guard exception for the exact path /system-admin/rag, page check, sidebar FAQ Assistant entry, upload and commit controls hidden for HR Admin, upload, preview and commit rejected server-side | none | none | merged to branch, not yet in main or deployed |
 | 1 | Document delete | pending | pending | none | pending |
 | 2 | Admin chat tester | pending | pending | none | pending |
 | 3 | Evaluation data model | pending | pending | Apply the new SQL migration in Supabase by hand | pending |
@@ -49,14 +49,15 @@ Deploy order for a feature that touches both repos: RAG API first, then Pulse360
 ## Pending (not yet in `main`)
 
 <!-- PENDING:START -->
-**pulse360** on `fix/rag-integration-hardening`: 3 commit(s) not in main, 3 uncommitted file(s).
+**pulse360** on `fix/rag-integration-hardening`: 5 commit(s) not in main, 2 uncommitted file(s).
 
+- `eeeb727` feat(rag): give HR Admin read-only access to the FAQ sources page
+- `a5d9c1e` docs(rag): sync cross-repo changelog and merge same-day headings in the script
 - `0748ce8` docs(rag): add cross-repo changelog ledger and sync script
 - `fa4718f` feat(rag): add shared auth tiers and update documentation
 - `a91e07a` docs(rag): mark sub-task 0 done and note ragas as an offline cross-check
 - uncommitted: `M docs/operations/CROSS_REPO_CHANGELOG.md`
 - uncommitted: `M docs/operations/RAG_EVALUATION_TUNING_PLAN.md`
-- uncommitted: `M scripts/sync-changelog.ps1`
 
 **rag** on `fix/rag-upload-limit-retry-budget`: 4 commit(s) not in main, 0 uncommitted file(s).
 
@@ -70,11 +71,15 @@ Deploy order for a feature that touches both repos: RAG API first, then Pulse360
 
 Newest first. Merge commits are omitted. Tags: **[pulse360]**, **[rag]**.
 
-<!-- pin:pulse360=0748ce8 -->
+<!-- pin:pulse360=eeeb727 -->
 <!-- pin:rag=9cb07fc -->
 
 <!-- ENTRIES:START -->
+### 2026-11-18
+- **[pulse360]** `eeeb727` feat(rag): give HR Admin read-only access to the FAQ sources page
+
 ### 2026-11-17
+- **[pulse360]** `a5d9c1e` docs(rag): sync cross-repo changelog and merge same-day headings in the script
 - **[pulse360]** `0748ce8` docs(rag): add cross-repo changelog ledger and sync script
 - **[rag]** `76880a2` Box sync settup guide.
 - **[rag]** `d0d890f` Review and stabilize Supabase RAG app
