@@ -1,13 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-const ROLE_PATHS: Record<string, string[]> = {
-  HR_ADMIN:     ["/dashboard", "/admin", "/employees", "/cycles", "/results", "/criteria", "/nominations", "/reviews", "/my-results", "/approvals"],
-  LINE_MANAGER: ["/dashboard", "/manager", "/approvals", "/results", "/nominations", "/reviews", "/my-results"],
-  EMPLOYEE:     ["/dashboard", "/nominations", "/reviews", "/my-results"],
-  SYSTEM_ADMIN: ["/dashboard", "/system-admin", "/profile"],
-};
+import { canRoleAccessPath } from "@/lib/role-paths";
 
 export async function proxy(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
@@ -27,11 +21,8 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  const allowed = ROLE_PATHS[role] ?? [];
-  const canAccess = allowed.some((prefix) => pathname.startsWith(prefix));
-
   // Role doesn't have access to this path → back to dashboard
-  if (!canAccess) {
+  if (!canRoleAccessPath(role, pathname)) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
