@@ -77,7 +77,7 @@ Phase 2:  [6 approved answers + style] -> [7 verify-and-revise] -> [8 measure an
   4. Run the full RAG suite; confirm only the two known Streamlit failures remain.
   5. Hand the user one fast-forward fetch and push command; merge the PR.
 - **Relevant context:** `src/faq_agent/config.py`, `tests/test_config.py`, `tests/conftest.py` in the RAG repo.
-- **Status:** `[x] done (rebased onto origin/main 62cf6ac+; commits ee99725 upload limit, d4d0584 retry budget, 2abd642 overlap test, 495c99a .env-independent API tests. Suite: 132 passed, 2 known Streamlit failures, with or without a .env)`
+- **Status:** `[x] done (branch fix/rag-upload-limit-retry-budget, rebased onto origin/main 76880a2: e90850d upload limit, 529192e retry budget, 97201a4 overlap test, 9cb07fc .env-independent API tests. Suite: 134 passed, 1 failure in test_streamlit_ui.py that also fails on main, with or without a .env)`
   - **Handoff note for sub-task 1a (HR Admin access in Pulse360):** RAG baseline is unified and ready on `fix/rag-integration-hardening`. Sub-task 1a takes place inside the Pulse360 repository (`pulse360/src/proxy.ts`, `Sidebar.tsx`, RAG routes) to grant HR Admin role access to `/system-admin/rag` tabs and tools while restricting document mutations (upload/commit/delete) to System Admin.
 
 ### 1a. HR Admin access to the RAG page
