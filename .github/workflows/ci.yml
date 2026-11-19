@@ -72,6 +72,9 @@ jobs:
       - name: Client IP unit tests
         run: npm run test:client-ip
 
+      - name: Pricing unit tests
+        run: npm run test:pricing
+
       - name: RAG client unit tests
         run: npm run test:rag-api
 
