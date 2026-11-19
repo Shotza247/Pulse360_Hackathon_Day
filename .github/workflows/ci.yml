@@ -81,6 +81,9 @@ jobs:
       - name: RAG authorization unit tests
         run: npm run test:rag-auth
 
+      - name: RAG chat tester unit tests
+        run: npm run test:rag-chat-tester
+
       - name: Lint advisory
         continue-on-error: true
         run: npm run lint
