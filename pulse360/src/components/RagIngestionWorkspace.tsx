@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { RAG_CATEGORIES } from "@/lib/rag-api";
 import { RAG_MAX_UPLOAD_BYTES, RAG_MAX_UPLOAD_LABEL } from "@/lib/rag-limits";
 import RagChatTester from "./RagChatTester";
 import RagSamplesWorkspace from "./RagSamplesWorkspace";
@@ -26,7 +27,7 @@ type Preview = {
 
 type Stage = "idle" | "previewing" | "ready" | "embedding" | "success" | "error";
 
-const categories = ["platform", "pricing", "privacy", "security", "onboarding", "analytics", "billing", "support"];
+const categories = RAG_CATEGORIES;
 
 // The RAG API returns errors as { error } (Pulse360 proxy), { detail: "text" },
 // or { detail: { message, request_id } } (RAG service 4xx/5xx).
