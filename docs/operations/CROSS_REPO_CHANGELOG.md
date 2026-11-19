@@ -17,6 +17,8 @@ Plan: [RAG Evaluation and Tuning Plan](RAG_EVALUATION_TUNING_PLAN.md). Deploy or
 3. The RAG repo is read from `.bob/tmp/Supabas_pulse360_RAG`. Use `-RagPath <path>` or the `RAG_REPO_PATH`
    environment variable for another location. `-DryRun` previews without writing.
 
+If a branch is rebased, its commits get new hashes and the next sync lists them again. Delete the entries with the old hashes by hand.
+
 Do not edit the text between the `<!-- ...:START -->` and `<!-- ...:END -->` markers or the `pin` markers.
 The script owns them.
 
@@ -34,9 +36,9 @@ Status values: `pending`, `in progress`, `merged`, `deployed`. Sub-task numbers 
 
 | Sub-task | Feature | Pulse360 | RAG | Manual step | Status |
 |---|---|---|---|---|---|
-| 0 | Reconcile RAG branches | n/a | Branch `fix/rag-upload-limit-retry-budget` pushed on top of RAG `main` (4 MB upload limit, retry cap, test isolation). Open the PR. | Merge the PR, then redeploy the RAG API | in progress (pushed, PR not opened) |
+| 0 | Reconcile RAG branches | n/a | Branch `fix/rag-upload-limit-retry-budget` pushed on RAG `main` (4 MB upload limit, retry cap, test isolation). Open the PR. | Merge the PR, then redeploy the RAG API | in progress (pushed, PR not opened) |
 | 1a | HR Admin access | Done on branch: shared role helper (a4718f); route-guard exception for the exact path /system-admin/rag, page check, sidebar FAQ Assistant entry, upload and commit controls hidden for HR Admin, upload, preview and commit rejected server-side | none | none | merged to branch, not yet in main or deployed |
-| 1 | Document delete | pending | pending | none | pending |
+| 1 | Document delete | Delete route with audit event `RAG_DOCUMENT_DELETED`, confirmation UI, System Admin only (`e037323`) | `feat/rag-document-delete` pushed: `DELETE /collections/{id}/documents/{doc_id}` (stacked on the upload-limit branch; open its PR first) | none; smoke-test steps 6-7 in DEPLOYMENT.md | in progress (both pushed, no PRs, not deployed) |
 | 2 | Admin chat tester | pending | pending | none | pending |
 | 3 | Evaluation data model | pending | pending | Apply the new SQL migration in Supabase by hand | pending |
 | 4 | Hybrid scoring | pending | pending | none | pending |
@@ -49,36 +51,51 @@ Deploy order for a feature that touches both repos: RAG API first, then Pulse360
 ## Pending (not yet in `main`)
 
 <!-- PENDING:START -->
-**pulse360** on `fix/rag-integration-hardening`: 5 commit(s) not in main, 2 uncommitted file(s).
+**pulse360** on `fix/rag-integration-hardening`: 10 commit(s) not in main, 1 uncommitted file(s).
 
+- `ccca0c0` ci: run the RAG authorization unit tests
+- `6758b35` fix(rag): repair package.json broken by the main merge and keep the rag-auth test script
+- `e037323` feat(rag): let System Admin delete a FAQ document with confirmation and audit
+- `2282f17` Update RAG_EVAL_TUNING.md
+- `d82c522` docs(rag): record sub-task 1a in the cross-repo changelog
 - `eeeb727` feat(rag): give HR Admin read-only access to the FAQ sources page
 - `a5d9c1e` docs(rag): sync cross-repo changelog and merge same-day headings in the script
 - `0748ce8` docs(rag): add cross-repo changelog ledger and sync script
 - `fa4718f` feat(rag): add shared auth tiers and update documentation
 - `a91e07a` docs(rag): mark sub-task 0 done and note ragas as an offline cross-check
 - uncommitted: `M docs/operations/CROSS_REPO_CHANGELOG.md`
-- uncommitted: `M docs/operations/RAG_EVALUATION_TUNING_PLAN.md`
 
-**rag** on `fix/rag-upload-limit-retry-budget`: 4 commit(s) not in main, 0 uncommitted file(s).
+**rag** on `feat/rag-document-delete`: 5 commit(s) not in main, 0 uncommitted file(s).
 
-- `9cb07fc` test(api): keep CORS and open-local tests independent of a developer .env
-- `97201a4` test(config): add overlap-rejection test and isolate test suite from .env
-- `529192e` fix(retry): cap total provider retry time at two request timeouts
-- `e90850d` fix(upload): cap uploads at 4 MB and explain chunk and OCR rejections
+- `693e7c2` feat(api): add admin-only DELETE for a document and its chunks
+- `9c1bc00` test(api): keep CORS and open-local tests independent of a developer .env
+- `ed9796b` test(config): add overlap-rejection test and isolate test suite from .env
+- `a685f43` fix(retry): cap total provider retry time at two request timeouts
+- `c8b5b18` fix(upload): cap uploads at 4 MB and explain chunk and OCR rejections
 <!-- PENDING:END -->
 
 ## Entries
 
 Newest first. Merge commits are omitted. Tags: **[pulse360]**, **[rag]**.
 
-<!-- pin:pulse360=eeeb727 -->
-<!-- pin:rag=9cb07fc -->
+<!-- pin:pulse360=ccca0c0 -->
+<!-- pin:rag=693e7c2 -->
 
 <!-- ENTRIES:START -->
+### 2026-11-19
+- **[pulse360]** `ccca0c0` ci: run the RAG authorization unit tests
+- **[pulse360]** `6758b35` fix(rag): repair package.json broken by the main merge and keep the rag-auth test script
+- **[pulse360]** `e037323` feat(rag): let System Admin delete a FAQ document with confirmation and audit
+- **[rag]** `693e7c2` feat(api): add admin-only DELETE for a document and its chunks
+
 ### 2026-11-18
+- **[pulse360]** `2282f17` Update RAG_EVAL_TUNING.md
+- **[pulse360]** `d82c522` docs(rag): record sub-task 1a in the cross-repo changelog
 - **[pulse360]** `eeeb727` feat(rag): give HR Admin read-only access to the FAQ sources page
 
 ### 2026-11-17
+- **[rag]** `4b6bbb9` feat(api): cap LLM tokens per visitor on /ask (10k per hour by default)
+- **[rag]** `f3450cf` fix(rate-limit): rename the reserved-word column so rag.rate_limits can be created
 - **[pulse360]** `a5d9c1e` docs(rag): sync cross-repo changelog and merge same-day headings in the script
 - **[pulse360]** `0748ce8` docs(rag): add cross-repo changelog ledger and sync script
 - **[rag]** `76880a2` Box sync settup guide.
@@ -88,19 +105,21 @@ Newest first. Merge commits are omitted. Tags: **[pulse360]**, **[rag]**.
 - **[pulse360]** `fa4718f` feat(rag): add shared auth tiers and update documentation
 
 ### 2026-11-15
+- **[rag]** `9c1bc00` test(api): keep CORS and open-local tests independent of a developer .env
 - **[pulse360]** `a91e07a` docs(rag): mark sub-task 0 done and note ragas as an offline cross-check
 - **[pulse360]** `90928eb` feat(rag): add cold-start warm endpoint and evaluation tuning plan
-- **[rag]** `9cb07fc` test(api): keep CORS and open-local tests independent of a developer .env
 - **[rag]** `ad3369a` feat(prompts): give the FAQ assistant a Pulse360 voice and a support-oriented abstention
 
 ### 2026-11-14
-- **[rag]** `97201a4` test(config): add overlap-rejection test and isolate test suite from .env
-- **[rag]** `529192e` fix(retry): cap total provider retry time at two request timeouts
-- **[rag]** `e90850d` fix(upload): cap uploads at 4 MB and explain chunk and OCR rejections
+- **[pulse360]** `b6d3533` refactor(landing): drive annual billing discount from a single pricing rule
+- **[rag]** `ed9796b` test(config): add overlap-rejection test and isolate test suite from .env
+- **[rag]** `a685f43` fix(retry): cap total provider retry time at two request timeouts
+- **[rag]** `c8b5b18` fix(upload): cap uploads at 4 MB and explain chunk and OCR rejections
 - **[rag]** `82d05fe` feat(api): add authenticated /warm endpoint to wake the database and embedder
 - **[rag]** `b665053` fix(api): build the module-level app lazily so a bad .env cannot break imports
 
 ### 2026-11-12
+- **[pulse360]** `fb2f8d0` build(deps): bump next from 16.2.12 to 16.4.5 in /pulse360
 - **[rag]** `35911be` updated gitignore
 
 ### 2026-11-11
@@ -129,4 +148,8 @@ Newest first. Merge commits are omitted. Tags: **[pulse360]**, **[rag]**.
 
 ### 2026-11-08
 - **[pulse360]** `e4db4a9` feat(rag): integrate Pulse360 with companion Supabase RAG service
+
+### 2026-08-27
+- **[pulse360]** `5b2e78f` build(deps): bump openai from 7.4.0 to 7.5.0 in /pulse360
+- **[pulse360]** `8a915cc` build(deps-dev): bump eslint-config-next in /pulse360
 <!-- ENTRIES:END -->
