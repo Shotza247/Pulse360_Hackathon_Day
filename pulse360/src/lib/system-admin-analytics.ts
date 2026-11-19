@@ -1,3 +1,5 @@
+export const MAX_ANALYTICS_CUSTOM_SPAN_DAYS = 366;
+
 export type AnalyticsRange = "7d" | "30d" | "90d" | "custom";
 export type AnalyticsGrain = "day" | "week";
 export type DashboardTab = "overview" | "adoption" | "governance" | "ai";
@@ -56,6 +58,10 @@ export function resolveDateWindow(
     const toDate = parseDate(firstValue(query.to));
     if (fromDate === null || toDate === null || toDate < fromDate) {
       throw new RangeError("Custom date range must contain valid dates with the start on or before the end.");
+    }
+    const spanDays = Math.round((toDate + 86_400_000 - fromDate) / 86_400_000);
+    if (spanDays > MAX_ANALYTICS_CUSTOM_SPAN_DAYS) {
+      throw new RangeError(`Custom date range cannot exceed ${MAX_ANALYTICS_CUSTOM_SPAN_DAYS} days.`);
     }
     fromTimestamp = fromDate;
     toExclusiveTimestamp = toDate + 86_400_000;

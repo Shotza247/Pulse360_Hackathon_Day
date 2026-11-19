@@ -44,9 +44,10 @@ test("custom ranges use daily grain through 14 days and weekly after", () => {
   assert.equal(long.previousToExclusive.toISOString(), long.from.toISOString());
 });
 
-test("rejects malformed and reversed custom date ranges", () => {
+test("rejects malformed, reversed, and excessively long custom date ranges", () => {
   assert.throws(() => resolveDateWindow({ range: "custom", from: "not-a-date", to: "2026-10-14" }, fixedNow), RangeError);
   assert.throws(() => resolveDateWindow({ range: "custom", from: "2026-10-15", to: "2026-10-14" }, fixedNow), RangeError);
+  assert.throws(() => resolveDateWindow({ range: "custom", from: "2024-01-01", to: "2026-01-01" }, fixedNow), RangeError);
 });
 
 test("parses and deduplicates selected departments, with all as the default", () => {
