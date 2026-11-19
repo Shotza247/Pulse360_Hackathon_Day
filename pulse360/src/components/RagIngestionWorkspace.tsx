@@ -56,6 +56,9 @@ export default function RagIngestionWorkspace({ canManageDocuments = false }: { 
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [stage, setStage] = useState<Stage>("idle");
   const [message, setMessage] = useState("");
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const loadDocuments = useCallback(async () => {
@@ -124,6 +127,23 @@ export default function RagIngestionWorkspace({ canManageDocuments = false }: { 
     } catch (error) {
       setStage("error");
       setMessage(error instanceof Error ? error.message : "Embedding failed.");
+    }
+  }
+
+  async function deleteDocument(document: DocumentRow) {
+    setDeletingId(document.id);
+    setDeleteMessage(null);
+    try {
+      const response = await fetch(`/api/system-admin/rag/documents/${document.id}`, { method: "DELETE" });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(errorMessage(data, "Delete failed."));
+      setDeleteMessage({ ok: true, text: `Deleted ${document.filename} and its ${document.chunks} chunks.` });
+      setConfirmingId(null);
+      await loadDocuments();
+    } catch (error) {
+      setDeleteMessage({ ok: false, text: error instanceof Error ? error.message : "Delete failed." });
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -196,7 +216,11 @@ export default function RagIngestionWorkspace({ canManageDocuments = false }: { 
         </section>
       </div>}
 
-      <section className="rounded-xl border border-gray-200 bg-white p-6"><div className="mb-4 flex items-end justify-between gap-4"><div><h2 className="text-base font-bold text-gray-950">Committed FAQ sources</h2><p className="mt-1 text-sm text-gray-500">Only committed documents are searchable by the FAQ Assistant.</p></div><button type="button" onClick={() => void loadDocuments()} className="text-sm font-bold text-blue-700 hover:text-blue-900">Refresh library</button></div>{documents.length === 0 ? <div className="rounded-lg bg-gray-50 p-5 text-sm text-gray-500">No committed FAQ sources have been found yet.</div> : <div className="divide-y divide-gray-100">{documents.map((document) => <div key={document.id} className="flex flex-col justify-between gap-2 py-3 sm:flex-row sm:items-center"><div><p className="text-sm font-bold text-gray-900">{document.filename}</p><p className="mt-1 text-xs text-gray-500">Document {document.id.slice(0, 12)}{document.category ? ` · ${document.category}` : ""}{document.created ? ` · ${formatDate(document.created)}` : ""}</p></div><span className="w-fit rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">{document.chunks} chunks · committed</span></div>)}</div>}</section>
+      <section className="rounded-xl border border-gray-200 bg-white p-6"><div className="mb-4 flex items-end justify-between gap-4"><div><h2 className="text-base font-bold text-gray-950">Committed FAQ sources</h2><p className="mt-1 text-sm text-gray-500">Only committed documents are searchable by the FAQ Assistant.</p></div><button type="button" onClick={() => void loadDocuments()} className="text-sm font-bold text-blue-700 hover:text-blue-900">Refresh library</button></div>
+        {deleteMessage && <div className={`mb-4 rounded-lg border px-4 py-3 text-sm ${deleteMessage.ok ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`}>{deleteMessage.text}</div>}
+        {documents.length === 0 ? <div className="rounded-lg bg-gray-50 p-5 text-sm text-gray-500">No committed FAQ sources have been found yet.</div> : <div className="divide-y divide-gray-100">{documents.map((document) => <div key={document.id} className="py-3"><div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center"><div><p className="text-sm font-bold text-gray-900">{document.filename}</p><p className="mt-1 text-xs text-gray-500">Document {document.id.slice(0, 12)}{document.category ? ` · ${document.category}` : ""}{document.created ? ` · ${formatDate(document.created)}` : ""}</p></div><div className="flex items-center gap-3"><span className="w-fit rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">{document.chunks} chunks · committed</span>{canManageDocuments && confirmingId !== document.id && <button type="button" disabled={deletingId !== null} onClick={() => { setDeleteMessage(null); setConfirmingId(document.id); }} className="text-xs font-bold text-red-700 hover:text-red-900 disabled:opacity-40">Delete</button>}</div></div>
+          {canManageDocuments && confirmingId === document.id && <div className="mt-3 flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-red-900">Delete <span className="font-bold">{document.filename}</span> and its {document.chunks} chunks? The FAQ Assistant will stop answering from it. This cannot be undone.</p><div className="flex gap-2"><button type="button" disabled={deletingId !== null} onClick={() => setConfirmingId(null)} className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40">Cancel</button><button type="button" disabled={deletingId !== null} onClick={() => void deleteDocument(document)} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-40">{deletingId === document.id ? "Deleting…" : "Delete document"}</button></div></div>}
+        </div>)}</div>}</section>
     </div>
   );
 }

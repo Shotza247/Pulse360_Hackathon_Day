@@ -28,6 +28,15 @@ export const RAG_ASK_TIMEOUT_MS = 60_000;
 export const RAG_PREVIEW_TIMEOUT_MS = 60_000;
 /** Commit embeds up to 100 chunks in batches, so it needs the longest wait. */
 export const RAG_COMMIT_TIMEOUT_MS = 120_000;
+/** Delete removes one document's chunks in a single transaction. */
+export const RAG_DELETE_TIMEOUT_MS = 30_000;
+
+const RAG_DOCUMENT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** RAG document IDs are UUIDs. Check before the ID is placed in an upstream URL path. */
+export function isRagDocumentId(value: string) {
+  return RAG_DOCUMENT_ID.test(value);
+}
 
 /** True when `callRagApi` gave up waiting, as opposed to the service being unreachable. */
 export function isRagTimeout(error: unknown) {

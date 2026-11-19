@@ -44,6 +44,8 @@ Smoke test after deploying:
 3. Ask a question on the landing page and confirm the answer cites the uploaded source.
 4. Send more than 10 questions in a minute from one browser and confirm a 429 with `Retry-After`.
 5. Log `X-Forwarded-For` once and confirm the visitor IP is the last entry. If it is not, adjust `TRUSTED_PROXY_HOPS`.
+6. Log in as HR Admin: confirm `/system-admin/rag` opens, the sidebar shows "FAQ Assistant", the document list loads, and there is no upload area or Delete button. Confirm `/system-admin` still redirects to the dashboard.
+7. As System Admin, delete the test document: confirm the dialog names the file and chunk count, the list refreshes, and the landing page assistant no longer answers from it. Then upload the same file again and confirm it is embedded, not reported as already committed. Check the audit log for a `RAG_DOCUMENT_DELETED` event whose metadata holds the document ID.
 
 Google Drive synchronization is a future source connector. The upload UI alone does not prove that embeddings are committed or searchable.
 
