@@ -1,20 +1,12 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
 import { callRagApi, forwardRagResponse, RAG_COLLECTION_ID } from "@/lib/rag-api";
+import { RAG_TOOL_ROLES, requireRagSession } from "@/lib/rag-auth";
 
 export const runtime = "nodejs";
 
-async function requireSystemAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session || (session.user as any).role !== "SYSTEM_ADMIN") {
-    return null;
-  }
-  return session;
-}
-
 export async function GET() {
-  if (!(await requireSystemAdmin())) {
+  const session = await requireRagSession(RAG_TOOL_ROLES);
+  if (!session) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

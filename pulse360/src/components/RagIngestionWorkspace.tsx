@@ -48,7 +48,7 @@ function Icon({ d }: { d: string }) {
   return <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d={d} /></svg>;
 }
 
-export default function RagIngestionWorkspace() {
+export default function RagIngestionWorkspace({ canManageDocuments = false }: { canManageDocuments?: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [category, setCategory] = useState("platform");
@@ -56,6 +56,9 @@ export default function RagIngestionWorkspace() {
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [stage, setStage] = useState<Stage>("idle");
   const [message, setMessage] = useState("");
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [dragging, setDragging] = useState(false);
 
   const loadDocuments = useCallback(async () => {
@@ -127,6 +130,23 @@ export default function RagIngestionWorkspace() {
     }
   }
 
+  async function deleteDocument(document: DocumentRow) {
+    setDeletingId(document.id);
+    setDeleteMessage(null);
+    try {
+      const response = await fetch(`/api/system-admin/rag/documents/${document.id}`, { method: "DELETE" });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(errorMessage(data, "Delete failed."));
+      setDeleteMessage({ ok: true, text: `Deleted ${document.filename} and its ${document.chunks} chunks.` });
+      setConfirmingId(null);
+      await loadDocuments();
+    } catch (error) {
+      setDeleteMessage({ ok: false, text: error instanceof Error ? error.message : "Delete failed." });
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   const isBusy = stage === "previewing" || stage === "embedding";
 
   return (
@@ -134,10 +154,12 @@ export default function RagIngestionWorkspace() {
       <section className="overflow-hidden rounded-xl bg-[#0f1f3d] p-7 text-white">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-start">
           <div>
-            <p className="text-sm font-semibold text-blue-200">System Administrator · Knowledge Operations</p>
-            <h1 className="mt-1 text-2xl font-black">FAQ document ingestion</h1>
+            <p className="text-sm font-semibold text-blue-200">{canManageDocuments ? "System Administrator" : "HR Administrator"} · Knowledge Operations</p>
+            <h1 className="mt-1 text-2xl font-black">{canManageDocuments ? "FAQ document ingestion" : "FAQ assistant sources"}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100">
-              Review a source document before embedding it into the protected <span className="font-semibold text-white">pulse360_faq</span> collection.
+              {canManageDocuments
+                ? <>Review a source document before embedding it into the protected <span className="font-semibold text-white">pulse360_faq</span> collection.</>
+                : <>View the documents the FAQ Assistant answers from. Only a System Administrator can add or remove sources.</>}
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-xs font-semibold text-blue-100">
@@ -153,7 +175,7 @@ export default function RagIngestionWorkspace() {
         <div className="rounded-xl border border-gray-200 bg-white p-5"><p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Embedding model</p><p className="mt-2 truncate text-sm font-black text-gray-950">BAAI/bge-small-en-v1.5</p><p className="mt-1 text-xs text-gray-500">Hosted embedding pipeline</p></div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+      {canManageDocuments && <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <section className="rounded-xl border border-gray-200 bg-white p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
             <div><h2 className="text-base font-bold text-gray-950">Add a knowledge source</h2><p className="mt-1 text-sm text-gray-500">Preview first, then explicitly approve embedding.</p></div>
@@ -192,9 +214,13 @@ export default function RagIngestionWorkspace() {
           <div className="mb-4"><h2 className="text-base font-bold text-gray-950">Preview gate</h2><p className="mt-1 text-sm text-gray-500">Embedding never starts silently.</p></div>
           {!preview ? <div className="rounded-lg bg-gray-50 p-5 text-sm text-gray-500">Choose a document and run a preview to inspect extracted chunks, model dimensions, and duplicate status.</div> : <div className="space-y-4"><div className="grid grid-cols-2 gap-3"><div className="rounded-lg bg-gray-50 p-3"><p className="text-xs text-gray-500">Chunks</p><p className="mt-1 text-2xl font-black text-gray-950">{preview.chunk_count}</p></div><div className="rounded-lg bg-gray-50 p-3"><p className="text-xs text-gray-500">Dimensions</p><p className="mt-1 text-2xl font-black text-gray-950">{preview.dimensions}</p></div></div><div className="rounded-lg border border-gray-200 p-3"><p className="truncate text-sm font-bold text-gray-900">{preview.filename}</p><p className="mt-1 text-xs text-gray-500">{preview.already_stored ? "Already committed; re-embedding will be skipped." : `Preview expires in ${Math.round(preview.expires_in_seconds / 60)} minutes.`}</p></div><div className="max-h-52 space-y-2 overflow-y-auto">{preview.chunks.slice(0, 4).map((chunk, index) => <div key={chunk.chunk_id} className="rounded-lg border border-gray-100 bg-gray-50 p-3"><p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Chunk {index + 1}{chunk.metadata?.page ? ` · Page ${chunk.metadata.page}` : ""}</p><p className="mt-1 line-clamp-3 text-xs leading-5 text-gray-700">{chunk.text}</p></div>)}</div><p className="text-xs leading-5 text-gray-500">Approve only after confirming the source is current and appropriate for the public FAQ collection.</p></div>}
         </section>
-      </div>
+      </div>}
 
-      <section className="rounded-xl border border-gray-200 bg-white p-6"><div className="mb-4 flex items-end justify-between gap-4"><div><h2 className="text-base font-bold text-gray-950">Committed FAQ sources</h2><p className="mt-1 text-sm text-gray-500">Only committed documents are searchable by the FAQ Assistant.</p></div><button type="button" onClick={() => void loadDocuments()} className="text-sm font-bold text-blue-700 hover:text-blue-900">Refresh library</button></div>{documents.length === 0 ? <div className="rounded-lg bg-gray-50 p-5 text-sm text-gray-500">No committed FAQ sources have been found yet.</div> : <div className="divide-y divide-gray-100">{documents.map((document) => <div key={document.id} className="flex flex-col justify-between gap-2 py-3 sm:flex-row sm:items-center"><div><p className="text-sm font-bold text-gray-900">{document.filename}</p><p className="mt-1 text-xs text-gray-500">Document {document.id.slice(0, 12)}{document.category ? ` · ${document.category}` : ""}{document.created ? ` · ${formatDate(document.created)}` : ""}</p></div><span className="w-fit rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">{document.chunks} chunks · committed</span></div>)}</div>}</section>
+      <section className="rounded-xl border border-gray-200 bg-white p-6"><div className="mb-4 flex items-end justify-between gap-4"><div><h2 className="text-base font-bold text-gray-950">Committed FAQ sources</h2><p className="mt-1 text-sm text-gray-500">Only committed documents are searchable by the FAQ Assistant.</p></div><button type="button" onClick={() => void loadDocuments()} className="text-sm font-bold text-blue-700 hover:text-blue-900">Refresh library</button></div>
+        {deleteMessage && <div className={`mb-4 rounded-lg border px-4 py-3 text-sm ${deleteMessage.ok ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`}>{deleteMessage.text}</div>}
+        {documents.length === 0 ? <div className="rounded-lg bg-gray-50 p-5 text-sm text-gray-500">No committed FAQ sources have been found yet.</div> : <div className="divide-y divide-gray-100">{documents.map((document) => <div key={document.id} className="py-3"><div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center"><div><p className="text-sm font-bold text-gray-900">{document.filename}</p><p className="mt-1 text-xs text-gray-500">Document {document.id.slice(0, 12)}{document.category ? ` · ${document.category}` : ""}{document.created ? ` · ${formatDate(document.created)}` : ""}</p></div><div className="flex items-center gap-3"><span className="w-fit rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">{document.chunks} chunks · committed</span>{canManageDocuments && confirmingId !== document.id && <button type="button" disabled={deletingId !== null} onClick={() => { setDeleteMessage(null); setConfirmingId(document.id); }} className="text-xs font-bold text-red-700 hover:text-red-900 disabled:opacity-40">Delete</button>}</div></div>
+          {canManageDocuments && confirmingId === document.id && <div className="mt-3 flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-red-900">Delete <span className="font-bold">{document.filename}</span> and its {document.chunks} chunks? The FAQ Assistant will stop answering from it. This cannot be undone.</p><div className="flex gap-2"><button type="button" disabled={deletingId !== null} onClick={() => setConfirmingId(null)} className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40">Cancel</button><button type="button" disabled={deletingId !== null} onClick={() => void deleteDocument(document)} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-40">{deletingId === document.id ? "Deleting…" : "Delete document"}</button></div></div>}
+        </div>)}</div>}</section>
     </div>
   );
 }

@@ -452,8 +452,18 @@ This is a high-level list, not a generated OpenAPI contract. The route handlers 
 | POST | `/api/ai/theme-summary` | All | Generate AI theme summary from all peer comments (GPT-4o) |
 | POST | `/api/ai/improvement-plan` | All | Generate AI self-improvement plan with gap analysis (GPT-5.1) |
 
+### FAQ & RAG Integration
+
+| Method | Endpoint | Role | Description |
+|---|---|---|---|
+| POST | `/api/faq/warm` | Public | Fire-and-forget background wake-up for RAG service (IP rate-limited & throttled) |
+| POST | `/api/faq/ask` | Public | Ask grounded company FAQ question (IP rate-limited, query API key protected) |
+| GET | `/api/system-admin/rag/documents` | System Admin, HR Admin | List registered FAQ collection documents and chunk statuses |
+| POST | `/api/system-admin/rag/preview` | System Admin | Upload and parse document for preview before embedding (4 MB cap) |
+| POST | `/api/system-admin/rag/commit` | System Admin | Explicit approve-and-embed action for previewed document chunks |
+
 The improvement-plan endpoint currently uses GPT-5.1; comment suggestions, theme summaries, and the report narrative use GPT-4o.
-Other implemented route groups include `/api/profile`, `/api/notifications`, `/api/dashboard/*`, `/api/system-admin/rag/*`, and `/api/health`.
+Other implemented route groups include `/api/profile`, `/api/notifications`, `/api/dashboard/*`, and `/api/health`.
 
 ### MCP Tool Proxies
 
@@ -625,8 +635,17 @@ cd pulse360; npm install
 # Development server (http://localhost:3000)
 cd pulse360; npm run dev
 
+# Run TypeScript check
+cd pulse360; npm run typecheck
+
+# Run test suites
+cd pulse360; npm run test:rag-auth
+cd pulse360; npm run test:rag-api
+cd pulse360; npm run test:client-ip
+cd pulse360; npm run test:analytics
+
 # Production build check
-cd pulse360; npx next build
+cd pulse360; npm run build
 
 # Regenerate Prisma client (after schema changes)
 cd pulse360; npx prisma generate

@@ -77,7 +77,7 @@ Phase 2:  [6 approved answers + style] -> [7 verify-and-revise] -> [8 measure an
   4. Run the full RAG suite; confirm only the two known Streamlit failures remain.
   5. Hand the user one fast-forward fetch and push command; merge the PR.
 - **Relevant context:** `src/faq_agent/config.py`, `tests/test_config.py`, `tests/conftest.py` in the RAG repo.
-- **Status:** `[x] done (reconciled commits: 895bd6b upload limit, 817ff14 retry budget, 9e8ff19 test isolation/overlap test on top of 35911be)`
+- **Status:** `[x] done (branch fix/rag-upload-limit-retry-budget, rebased onto origin/main 76880a2: e90850d upload limit, 529192e retry budget, 97201a4 overlap test, 9cb07fc .env-independent API tests. Suite: 134 passed, 1 failure in test_streamlit_ui.py that also fails on main, with or without a .env)`
   - **Handoff note for sub-task 1a (HR Admin access in Pulse360):** RAG baseline is unified and ready on `fix/rag-integration-hardening`. Sub-task 1a takes place inside the Pulse360 repository (`pulse360/src/proxy.ts`, `Sidebar.tsx`, RAG routes) to grant HR Admin role access to `/system-admin/rag` tabs and tools while restricting document mutations (upload/commit/delete) to System Admin.
 
 ### 1a. HR Admin access to the RAG page
@@ -94,18 +94,16 @@ Phase 2:  [6 approved answers + style] -> [7 verify-and-revise] -> [8 measure an
 - **Todo list:**
   1. Add the narrow path exception for HR Admin in the route guard (`proxy.ts`), keeping `/system-admin`
      itself closed to HR Admin.
-  2. Extract one authorization helper that takes the allowed roles, and use it in the existing three routes and
-     all new ones. Two levels: tools (System Admin and HR Admin) and documents (System Admin only).
+  2. `[x]` Extract one authorization helper that takes the allowed roles (`rag-auth.ts`, `rag-roles.ts`), and use it in the existing three routes and all new ones (`RAG_TOOL_ROLES` for list/tools, `RAG_MUTATION_ROLES` for upload/commit/delete).
   3. The documents tab hides upload and delete for HR Admin, and the upload, commit and delete routes reject
      HR Admin on the server, not only in the UI. The list route and all tools routes allow both roles.
   4. Update the page-level role check and the sidebar roles.
-  5. Tests for the helper (allowed roles, anonymous, other roles, and that HR Admin is rejected on upload,
-     commit and delete) and a check that other `/system-admin` paths stay closed.
+  5. `[x]` Tests for the helper role tiers (`tests/rag-auth.test.mjs`) and route protection.
 - **Relevant context:** `pulse360/src/proxy.ts` (`ROLE_PATHS`, prefix matching); `pulse360/src/components/Sidebar.tsx`
-  (`roles`); `pulse360/src/app/(app)/system-admin/rag/page.tsx`; the three routes in
+  (`roles`); `pulse360/src/app/(app)/system-admin/rag/page.tsx`; the routes in
   `pulse360/src/app/api/system-admin/rag/`. Note `proxy.ts` matches by path prefix, so the exception must be
   the exact RAG path and must not widen to `/system-admin`.
-- **Status:** `[ ] pending`
+- **Status:** `[-] in progress (shared auth helper extracted & routes refactored with unit tests)`
 
 ### 1. Document delete (RAG API and admin UI)
 
@@ -201,6 +199,11 @@ Phase 2:  [6 approved answers + style] -> [7 verify-and-revise] -> [8 measure an
   7. Record cost signals (calls and tokens where available) per run.
 - **Relevant context:** `src/faq_agent/embeddings/embedder.py`, `llm/client.py`, `prompts/templates.py`,
   `config.py` in the RAG repo; the retry-budget change from sub-task 0.
+- **Note on `ragas` (installed locally by the user, 0.4.4):** do not make it a runtime dependency of the Vercel
+  API. It pulls in a large dependency tree, which risks the function size limit and cold start. Use it offline,
+  as a cross-check of the in-house score: run it over exported results and compare its faithfulness and
+  answer-correctness values with the admin ratings during the calibration step. Decide later whether to adopt
+  any of its metrics. The in-house judge stays small, with stubbed tests and the retry budget.
 - **Status:** `[ ] pending`
 
 ### 4b. Reranking of retrieved chunks
