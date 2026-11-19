@@ -163,15 +163,14 @@ Phase 2:  [6 approved answers + style] -> [7 verify-and-revise] -> [8 measure an
   - Admin-key endpoints to list, create, edit, delete, and bulk-import samples (CSV or JSON).
   - The user applies the migration to Supabase by hand, since the schema is managed there.
 - **Todo list:**
-  1. Design the tables and indexes; add the migration file and README/deployment note on applying it.
-  2. RAG: store layer and endpoints for samples, with validation (length limits, duplicates).
-  3. Bulk import with a preview step showing what will be created, matching the ingestion pattern.
-  4. Pulse360: System Admin proxy routes and audit events for sample create, edit, delete.
-  5. Tests with a stubbed database layer, as done for upload limits.
-- **Relevant context:** `docs/migrations/001_add_rag_previews.sql`, `002_add_rate_limits.sql`;
-  `src/faq_agent/supabase_store.py` (connection and preview patterns); `scripts/evaluate_retrieval.py`
-  (existing question file format).
-- **Status:** `[ ] pending`
+  1. `[x]` Design the tables and indexes; add migration file `docs/migrations/003_add_rag_evaluation_tables.sql`.
+  2. `[x]` Sample data model, validation, and golden baseline dataset in `pulse360/src/lib/rag-samples.ts`.
+  3. `[x]` Pulse360 API proxy routes for samples list, create, edit, delete, and bulk import (`/api/system-admin/rag/samples/*`) with audit logging.
+  4. `[x]` Golden dataset workbench UI tab with search, categories, CSV/JSON bulk import, and JSON export (`pulse360/src/components/RagSamplesWorkspace.tsx`).
+  5. `[x]` Automated unit tests for validation, role protection, CSV parsing, and default sets (`tests/rag-samples.test.mjs`).
+- **Relevant context:** `docs/migrations/003_add_rag_evaluation_tables.sql`;
+  `pulse360/src/lib/rag-samples.ts`, `pulse360/src/components/RagSamplesWorkspace.tsx`.
+- **Status:** `[-] in progress (Pulse360 Golden Dataset UI, proxy routes, CSV importer, and migration file complete; companion RAG endpoints in progress)`
 
 ### 4. Hybrid scoring and failure diagnosis
 

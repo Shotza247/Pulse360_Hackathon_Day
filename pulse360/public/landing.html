@@ -345,7 +345,15 @@
   <template id="aiAvatarTemplate"><svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 4.5v3.4" stroke="#73ddd0" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="3.6" r="1.8" fill="#73ddd0"/><rect x="6.2" y="9" width="19.6" height="17" rx="6" fill="#24496b" stroke="#e7f2ff" stroke-width="1.4"/><path d="M12 16.2h.1m7.8 0h.1" stroke="#73ddd0" stroke-width="3" stroke-linecap="round"/><path d="M12 21h8" stroke="#e7f2ff" stroke-width="1.6" stroke-linecap="round"/><path d="M3.5 14.5v6m25-6v6" stroke="#73ddd0" stroke-width="1.6" stroke-linecap="round"/></svg></template>
   <script src="/pricing.js"></script>
   <script>
-    const pricing = window.Pulse360Pricing;
+    const defaultPricingFallback = {
+      monthlyUsd: () => 0,
+      annualUsd: () => 0,
+      annualBillingCopy: () => '',
+      annualBillingNote: () => '',
+      annualDiscountPercent: () => 0,
+      annualDiscountLabel: () => ''
+    };
+    const pricing = window.Pulse360Pricing || defaultPricingFallback;
     const toggle = document.getElementById('billingToggle');
     const pricingRegion = document.getElementById('currencyNote');
     const pricingRegions = {
@@ -369,7 +377,8 @@
     let publicBilling = 'Monthly';
     const money = (usdAmount) => new Intl.NumberFormat(detectedRegion.locale, { style: 'currency', currency: detectedRegion.currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(usdAmount * detectedRegion.usdRate);
     const planUsd = (plan, annual) => (annual ? pricing.annualUsd(plan) : pricing.monthlyUsd(plan));
-    document.getElementById('annualBillingCopy').textContent = pricing.annualBillingCopy();
+    const annualBillingCopyEl = document.getElementById('annualBillingCopy');
+    if (annualBillingCopyEl) annualBillingCopyEl.textContent = pricing.annualBillingCopy();
     function renderPublicPricing() {
       const annual = publicBilling === 'Annual';
       document.getElementById('freePrice').innerHTML = `${money(pricing.monthlyUsd('Free'))} <small>forever</small>`;
@@ -501,7 +510,11 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         const detail = data.detail;
-        throw new Error(typeof detail === 'string' ? detail : detail?.message || `Request failed (${response.status})`);
+        const msg = typeof detail === 'string' ? detail : detail?.message || (typeof data.error === 'string' ? data.error : `Request failed (${response.status})`);
+        const err = new Error(msg);
+        err.status = response.status;
+        err.data = data;
+        throw err;
       }
       return data;
     }
@@ -583,7 +596,13 @@
       } catch (error) {
         row.remove();
         console.error('Pulse360 FAQ assistant request failed:', error);
-        addChatbotMessage("We're still getting the Pulse360 FAQ Assistant ready. We're working on this feature, so please check back soon! :)", false);
+        if (error && error.status === 429) {
+          addChatbotMessage("You have reached the question limit for now. Please wait a moment before asking another question.", false);
+        } else if (error && error.status === 400) {
+          addChatbotMessage(error.message || "Please check your question format. Questions must be between 3 and 1000 characters.", false);
+        } else {
+          addChatbotMessage("We're still getting the Pulse360 FAQ Assistant ready. We're working on this feature, so please check back soon! :)", false);
+        }
       } finally {
         chatbotSend.disabled = false;
         chatbotInput.disabled = false;
