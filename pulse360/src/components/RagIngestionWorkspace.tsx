@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RAG_MAX_UPLOAD_BYTES, RAG_MAX_UPLOAD_LABEL } from "@/lib/rag-limits";
 import RagChatTester from "./RagChatTester";
+import RagSamplesWorkspace from "./RagSamplesWorkspace";
 
 type DocumentRow = {
   id: string;
@@ -50,7 +51,7 @@ function Icon({ d }: { d: string }) {
 }
 
 export default function RagIngestionWorkspace({ canManageDocuments = false }: { canManageDocuments?: boolean }) {
-  const [activeTab, setActiveTab] = useState<"sources" | "tester">("sources");
+  const [activeTab, setActiveTab] = useState<"sources" | "tester" | "samples">("sources");
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [category, setCategory] = useState("platform");
@@ -195,10 +196,23 @@ export default function RagIngestionWorkspace({ canManageDocuments = false }: { 
         >
           💬 Chat Tester & Inspector
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("samples")}
+          className={`pb-3 text-sm font-bold border-b-2 transition flex items-center gap-2 ${
+            activeTab === "samples"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          ⭐ Approved Answers (Gold Dataset)
+        </button>
       </div>
 
       {activeTab === "tester" ? (
         <RagChatTester />
+      ) : activeTab === "samples" ? (
+        <RagSamplesWorkspace />
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
