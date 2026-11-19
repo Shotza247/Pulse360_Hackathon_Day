@@ -169,7 +169,7 @@ export default async function SystemAdminDashboard({ searchParams }: { searchPar
     ...(selectionIsAll ? {} : { departmentId: { in: validDepartmentIds } }),
   });
   const aiActorWhere = selectionIsAll
-    ? { is: { role: { not: "SYSTEM_ADMIN" as const } } }
+    ? { isNot: { role: "SYSTEM_ADMIN" as const } }
     : { is: { role: { not: "SYSTEM_ADMIN" as const }, departmentId: { in: validDepartmentIds } } };
   const aiEventWhere = (from: Date, to: Date) => ({ ...period(from, to), actor: aiActorWhere });
   const nominationEventWhere = (from: Date, to: Date) => ({
@@ -183,15 +183,16 @@ export default async function SystemAdminDashboard({ searchParams }: { searchPar
     ...(selectionIsAll ? {} : { employee: { is: { departmentId: { in: validDepartmentIds } } } }),
   });
 
-  const [employees, nominations, reviews, missingReviewMetadata, loginEvents, previousLoginEvents, nominationEvents, previousNominationEvents, reviewEvents, previousReviewEvents, aiEvents, previousAiEvents, aiDecisions] = await Promise.all([
+  const [employees, nominations, reviewStatusGroups, missingReviewMetadata, loginEvents, previousLoginEvents, nominationEvents, previousNominationEvents, reviewEvents, previousReviewEvents, aiEvents, previousAiEvents, aiDecisionGroups] = await Promise.all([
     prisma.employee.findMany({ where: employeeWhere, select: { id: true, gender: true, employmentType: true, departmentId: true, department: { select: { name: true } } } }),
     prisma.nomination.findMany({
       where: { ...cycleWhere, ...(selectionIsAll ? {} : { employee: { departmentId: { in: validDepartmentIds } } }) },
       select: { approvalStatus: true, submissionStatus: true, createdAt: true, employee: { select: { departmentId: true, department: { select: { name: true } } } }, reviewer: { select: { department: { select: { name: true } } } } },
     }),
-    prisma.review.findMany({
+    prisma.review.groupBy({
+      by: ["status"],
       where: { ...cycleWhere, ...(selectionIsAll ? {} : { employee: { departmentId: { in: validDepartmentIds } } }) },
-      select: { status: true },
+      _count: { _all: true },
     }),
     prisma.review.count({
       where: {
@@ -214,7 +215,11 @@ export default async function SystemAdminDashboard({ searchParams }: { searchPar
     prisma.reviewEvent.findMany({ where: reviewEventWhere(dateWindow.previousFrom, dateWindow.previousToExclusive), select: { createdAt: true } }),
     prisma.aiUsageEvent.findMany({ where: aiEventWhere(dateWindow.from, dateWindow.toExclusive), select: { createdAt: true, inputTokens: true, outputTokens: true, status: true, feature: true } }),
     prisma.aiUsageEvent.findMany({ where: aiEventWhere(dateWindow.previousFrom, dateWindow.previousToExclusive), select: { createdAt: true, inputTokens: true, outputTokens: true, status: true, feature: true } }),
-    prisma.aiHitlDecision.findMany({ where: aiEventWhere(dateWindow.from, dateWindow.toExclusive), select: { decision: true } }),
+    prisma.aiHitlDecision.groupBy({
+      by: ["decision"],
+      where: aiEventWhere(dateWindow.from, dateWindow.toExclusive),
+      _count: { _all: true },
+    }),
   ]);
 
   const activeUserTrend = aggregateTrend(loginEvents, dateWindow.from, dateWindow.toExclusive, dateWindow.grain, () => 1, (row) => row.actorId === null ? null : String(row.actorId));
@@ -245,16 +250,19 @@ export default async function SystemAdminDashboard({ searchParams }: { searchPar
   const overdue = pending.filter((item) => isOverdueApproval(item, overdueCutoff)).length;
   const approved = submittedNominations.filter((item) => item.approvalStatus === "APPROVED").length;
   const rejected = submittedNominations.filter((item) => item.approvalStatus === "REJECTED").length;
-  const submittedReviews = reviews.filter((item) => item.status === "SUBMITTED").length;
-  const draftReviews = reviews.filter((item) => item.status === "DRAFT").length;
+  const reviewCountsByStatus = new Map(reviewStatusGroups.map((g) => [g.status, g._count._all]));
+  const submittedReviews = reviewCountsByStatus.get("SUBMITTED") ?? 0;
+  const draftReviews = reviewCountsByStatus.get("DRAFT") ?? 0;
+  const totalReviewRecords = reviewStatusGroups.reduce((sum, g) => sum + g._count._all, 0);
   const totalInputTokens = aiEvents.reduce((sum, item) => sum + item.inputTokens, 0);
   const totalOutputTokens = aiEvents.reduce((sum, item) => sum + item.outputTokens, 0);
   const aiSuccesses = aiEvents.filter((item) => item.status === "SUCCESS").length;
   const aiErrors = aiEvents.length - aiSuccesses;
+  const aiDecisionMap = new Map(aiDecisionGroups.map((g) => [g.decision, g._count._all]));
   const aiDecisionCounts = {
-    ACCEPTED: aiDecisions.filter((item) => item.decision === "ACCEPTED").length,
-    EDITED: aiDecisions.filter((item) => item.decision === "EDITED").length,
-    DISCARDED: aiDecisions.filter((item) => item.decision === "DISCARDED").length,
+    ACCEPTED: aiDecisionMap.get("ACCEPTED") ?? 0,
+    EDITED: aiDecisionMap.get("EDITED") ?? 0,
+    DISCARDED: aiDecisionMap.get("DISCARDED") ?? 0,
   };
 
   const pendingByDepartment = new Map<string, number>();
@@ -381,9 +389,12 @@ export default async function SystemAdminDashboard({ searchParams }: { searchPar
           <label className="block text-xs font-semibold text-gray-700">
             Review cycle
             <select name="cycle" defaultValue={cycleValue} className="mt-1 block h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900">
-              {selectedCycle && <option value={selectedCycle.id}>{selectedCycle.name} · current</option>}
               <option value="all">All cycles</option>
-              {cycleList.filter((item) => item.id !== selectedCycle?.id).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              {cycleList.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}{currentCycle && item.id === currentCycle.id ? " · current" : ""}
+                </option>
+              ))}
             </select>
           </label>
           <button type="submit" className="h-10 rounded-md bg-[#0f1f3d] px-5 text-sm font-semibold text-white hover:bg-[#1b3158]">Apply filters</button>
@@ -484,7 +495,7 @@ export default async function SystemAdminDashboard({ searchParams }: { searchPar
               { label: "Nominations submitted", value: submittedNominations.length },
               { label: "Nomination records", value: nominations.length },
               { label: "Reviews submitted", value: submittedReviews },
-              { label: "Review records", value: reviews.length },
+              { label: "Review records", value: totalReviewRecords },
             ]} empty="No cycle participation data in this scope." />
           </Section>
         </div>
