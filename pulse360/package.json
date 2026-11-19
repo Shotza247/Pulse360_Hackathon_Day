@@ -11,6 +11,7 @@
     "test:client-ip": "node --experimental-strip-types --test tests/client-ip.test.mjs",
     "test:rag-api": "node --experimental-strip-types --test tests/rag-api.test.mjs",
     "test:rag-auth": "node --experimental-strip-types --test tests/rag-auth.test.mjs tests/role-paths.test.mjs",
+    "test:rag-chat-tester": "node --experimental-strip-types --test tests/rag-chat-tester.test.mjs",
     "test:pricing": "node --test tests/pricing.test.mjs",
     "typecheck": "tsc --noEmit",
     "db:migrate": "prisma migrate deploy",

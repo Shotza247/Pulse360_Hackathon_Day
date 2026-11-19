@@ -142,14 +142,13 @@ Phase 2:  [6 approved answers + style] -> [7 verify-and-revise] -> [8 measure an
   1. RAG: add an admin-key endpoint that runs the normal answer pipeline and returns full detail
      (all retrieved chunks with scores, the final answer, status, timings, active settings).
   2. RAG: apply a modest rate limit and the collection allowlist to this endpoint.
-  3. Pulse360: add a System Admin proxy route with the longer `/ask`-style timeout.
-  4. Pulse360: build a React chat component that mirrors the landing page chatbot behaviour (the landing
-     chatbot is inline HTML in `public/landing.html` and is not reusable) with a details panel.
-  5. Tests for the endpoint and the proxy authorization.
+  3. `[x]` Pulse360: add an admin proxy route (`POST /api/system-admin/rag/test-query`) with rate-limiting, `RAG_TOOL_ROLES` protection, and 60s timeout.
+  4. `[x]` Pulse360: build an interactive React chat component (`RagChatTester.tsx`) with category filters and chunk inspector drawer on `/system-admin/rag`.
+  5. `[x]` Tests for the endpoint authorization, category filtering, and timeout handling (`tests/rag-chat-tester.test.mjs`).
 - **Relevant context:** landing chatbot in `pulse360/public/landing.html` (`askPulse360`, `addChatbotMessage`);
   `src/faq_agent/api/routes.py`, `retrieval/retriever.py`, `llm/client.py` in the RAG repo;
   `pulse360/src/lib/rag-api.ts` timeouts.
-- **Status:** `[ ] pending`
+- **Status:** `[-] in progress (Pulse360 client proxy, tester UI, and tests complete; companion RAG test-query endpoint in progress)`
 
 ### 3. Evaluation data model and sample management
 
