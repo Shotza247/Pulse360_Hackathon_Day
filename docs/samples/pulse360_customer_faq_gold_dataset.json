@@ -1,0 +1,68 @@
+[
+  {
+    "question": "Is the Pulse360 Free plan really free forever?",
+    "approved_answer": "Yes. The Free plan is permanently free for organizations with up to 59 active employees. It includes full access to core 360 review cycles, peer nominations, manager approvals, and basic reporting with no credit card required.",
+    "category": "pricing",
+    "is_active": true
+  },
+  {
+    "question": "How is the annual billing discount calculated?",
+    "approved_answer": "Annual subscriptions receive a standard 15% discount off the total of 12 monthly subscription payments. The discounted amount is billed as a single upfront payment upon annual renewal.",
+    "category": "pricing",
+    "is_active": true
+  },
+  {
+    "question": "What plan tiers does Pulse360 offer?",
+    "approved_answer": "Pulse360 offers four tiers based on employee headcount: Free (up to 59 employees), Basic (up to 149 employees with historical analytics and exports), Premium (up to 499 employees with advanced HR and Operations analytics plus priority support), and Enterprise (500+ employees with custom integrations and dedicated implementation guidance).",
+    "category": "pricing",
+    "is_active": true
+  },
+  {
+    "question": "Can we import employees in bulk using a CSV file?",
+    "approved_answer": "Yes. System Administrators and HR Administrators can bulk-import employee directories via CSV. The CSV requires standard employee fields including full name, work email, department, role, job title, and reporting manager email.",
+    "category": "onboarding",
+    "is_active": true
+  },
+  {
+    "question": "How are HR and Operations views differentiated in Pulse360?",
+    "approved_answer": "Pulse360 provides tailored audience dashboards: HR teams see deep talent metrics, competency growth trends, and demographic inclusion patterns, while Operations teams monitor workflow health, cycle completion rates, manager approval bottlenecks, and platform adoption signals.",
+    "category": "platform",
+    "is_active": true
+  },
+  {
+    "question": "How does Pulse360 protect employee data privacy and feedback confidentiality?",
+    "approved_answer": "Employee feedback is encrypted at rest and in transit. Numerical peer scores are aggregated across criteria to prevent individual peer deanonymization. Direct peer identity is never displayed alongside numerical scores.",
+    "category": "privacy",
+    "is_active": true
+  },
+  {
+    "question": "Who has permission to upload, preview, and delete FAQ knowledge documents?",
+    "approved_answer": "Only users with the System Administrator (SYSTEM_ADMIN) role have permissions to upload, preview chunk boundaries, commit vector embeddings, and delete documents in the FAQ Knowledge Base. HR Administrators have read-only visibility into indexed sources.",
+    "category": "security",
+    "is_active": true
+  },
+  {
+    "question": "What document formats and file size limits are supported for knowledge ingestion?",
+    "approved_answer": "The FAQ ingestion pipeline supports machine-readable PDF, TXT, and Markdown (.md) documents up to a maximum file size of 4 MB per document.",
+    "category": "platform",
+    "is_active": true
+  },
+  {
+    "question": "Is Pulse360 compliant with data protection regulations such as GDPR and POPIA?",
+    "approved_answer": "Yes. Pulse360 adheres to GDPR and POPIA data protection principles, enforcing role-based access control, cryptographic session handling, tenant data isolation, and comprehensive audit event logging for all administrative actions.",
+    "category": "privacy",
+    "is_active": true
+  },
+  {
+    "question": "Can we change our billing currency or view regional pricing?",
+    "approved_answer": "Yes. Pulse360 automatically detects regional pricing based on your timezone, supporting ZAR (South Africa), EUR (Europe), GBP (United Kingdom), AUD (Australia), CAD (Canada), and USD (United States / default).",
+    "category": "billing",
+    "is_active": true
+  },
+  {
+    "question": "How do we contact support if we encounter platform or review cycle issues?",
+    "approved_answer": "You can reach Pulse360 technical support directly through the in-app help desk or by submitting an inquiry to support@pulse360.com. Premium and Enterprise accounts receive priority SLA response times.",
+    "category": "support",
+    "is_active": true
+  }
+]
