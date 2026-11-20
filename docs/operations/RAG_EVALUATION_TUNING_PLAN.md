@@ -324,6 +324,49 @@ similarity mapping and blend weights, and to decide the Phase 2 defaults. Do not
 - **Testing:** pytest for RAG (stubbed models and database), node tests for Pulse360 helpers, typecheck and lint.
 - **Delivery:** one sub-task at a time on the existing hardening branch pattern; review, commit, then wait for approval.
 
+## Governance, Auditability, and Accountability Controls
+
+To provide full organizational compliance, transparency, and oversight, the RAG assistant incorporates four core governance dimensions:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                            PULSE360 RAG GOVERNANCE CONTROLS                                 │
+├──────────────────────────────┬──────────────────────────────┬───────────────────────────────┤
+│    Role-Based Separation     │   Ground-Truth Gold Dataset  │ Chunk Transparency & Vectors  │
+├──────────────────────────────┼──────────────────────────────┼───────────────────────────────┤
+│ • System Admin: full upload, │ • Offline benchmark runner   │ • Full PDF text chunk preview │
+│   commit, delete & settings  │ • Interactive test sandbox   │ • Cosine similarity scores    │
+│ • HR Admin: view sources,    │ • Leave-one-out isolation    │ • Confidence threshold bands  │
+│   manage samples & test      │ • Live side-by-side feedback │ • Page & document ID metadata │
+└──────────────────────────────┴──────────────────────────────┴───────────────────────────────┘
+```
+
+### 1. Separation of Duties and Access Tiers
+- **System Administrator (`SYSTEM_ADMIN`)**: Holds operational and data mutation privileges (`RAG_MUTATION_ROLES`). Only System Admins can upload new documents, preview chunk boundaries, commit vectors to Supabase `pgvector`, and delete sources.
+- **HR Administrator (`HR_ADMIN`)**: Holds domain policy, evaluation, and quality oversight privileges (`RAG_TOOL_ROLES`). HR Admins can view indexed sources, curate approved company answers (Gold Dataset), and run evaluation / chat testing benchmarks without being able to modify or delete document vectors.
+
+### 2. When the Model and System Use the Gold Dataset
+The company-approved Gold Dataset is utilized across three distinct operational phases:
+1. **Interactive Testing & Validation Sandbox**: In the Chat Tester & Inspector (`RagChatTester`), HR Admins can select any Gold Sample to run a live query against the assistant. The UI renders the model's generated answer side-by-side with the approved authoritative standard for immediate verification of factual correctness.
+2. **Automated Batch Evaluation & Scoring Runs**: The evaluation runner processes batches of golden samples against the vector index and LLM generation pipeline to compute hybrid scores (embedding similarity + factual coverage judge - contradiction penalty).
+3. **Leave-One-Out Isolation Protocol**: To prevent circular self-grading, evaluation sessions exclude the sample currently being evaluated from the retrievable evidence pool.
+4. **Phase 2 Runtime Verification & Style Grounding**: In the verify-and-revise loop, approved answers provide few-shot style references and authoritative fallback boundaries for ambiguous inquiries.
+
+### 3. Chunk Extraction, Vector Scores, and Embedding Transparency
+- **PDF Ingestion Chunk Inspector**: During the preview stage of document ingestion, administrators can open the Extracted Chunks Preview modal to inspect every chunk boundary, token density, and page assignment before approving embedding.
+- **Retrieval Inspector with Vector Scores**: Every test query exposes its retrieved chunks, page numbers, and cosine similarity scores (`0.0000 - 1.0000`).
+- **Confidence Threshold Bands**:
+  - `High Relevance (>= 80%)`: Strong vector alignment and direct factual grounding.
+  - `Moderate Relevance (60% - 79%)`: Contextually related; checked by verifier.
+  - `Low Relevance (< 60%)`: Distant match; flagged for review or abstention.
+- **Chunk Text Viewer**: Administrators can expand any retrieved chunk into a full-text modal to inspect exact wording and verify evidence authenticity.
+
+### 4. Audit Trail and Compliance Logging
+- All sample lifecycle mutations (`RAG_SAMPLE_CREATED`, `RAG_SAMPLE_UPDATED`, `RAG_SAMPLE_DELETED`, `RAG_SAMPLES_IMPORTED`) record the acting user ID, timestamp, and payload metadata in the `audit_events` table.
+- Document deletions (`RAG_DOCUMENT_DELETED`) log the document UUID, filename, and total chunk count deleted.
+
+---
+
 ## Decisions confirmed
 
 | Question | Decision |
