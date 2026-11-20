@@ -75,6 +75,17 @@ export async function callRagApi(
   });
 }
 
+/**
+ * The response for a RAG call that threw: it timed out or the service is unreachable.
+ * Deliberately generic, since the underlying message can carry the service URL.
+ */
+export function ragFailureResponse(error: unknown) {
+  if (isRagTimeout(error)) {
+    return Response.json({ error: "The RAG service took too long to respond." }, { status: 504 });
+  }
+  return Response.json({ error: "Unable to reach the companion RAG service." }, { status: 503 });
+}
+
 export async function forwardRagResponse(response: Response) {
   const text = await response.text();
   let payload: unknown = null;
