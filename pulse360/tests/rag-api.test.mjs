@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   isRagDocumentId,
   isRagTimeout,
+  ragFailureResponse,
   RAG_ASK_TIMEOUT_MS,
   RAG_COMMIT_TIMEOUT_MS,
   RAG_DEFAULT_TIMEOUT_MS,
@@ -44,4 +45,16 @@ test("recognises fetch timeouts and aborts, but not other failures", () => {
 test("upload limit stays under the Vercel request-body cap and matches its label", () => {
   assert.ok(RAG_MAX_UPLOAD_BYTES <= 4 * 1024 * 1024);
   assert.equal(RAG_MAX_UPLOAD_LABEL, `${RAG_MAX_UPLOAD_BYTES / (1024 * 1024)} MB`);
+});
+
+test("a failed RAG call is reported as 503 or 504, never as success, and leaks no detail", async () => {
+  const unreachable = ragFailureResponse(new TypeError("fetch failed: https://rag.internal/collections"));
+  assert.equal(unreachable.status, 503);
+  const body = await unreachable.json();
+  assert.match(body.error, /unable to reach/i);
+  assert.ok(!JSON.stringify(body).includes("rag.internal"));
+
+  const slow = ragFailureResponse(new DOMException("timed out", "TimeoutError"));
+  assert.equal(slow.status, 504);
+  assert.match((await slow.json()).error, /too long/i);
 });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { RAG_TOOL_ROLES, requireRagSession } from "@/lib/rag-auth";
-import { callRagApi, forwardRagResponse, RAG_COLLECTION_ID } from "@/lib/rag-api";
+import { callRagApi, forwardRagResponse, isRagDocumentId, ragFailureResponse, RAG_COLLECTION_ID } from "@/lib/rag-api";
 import { writeAuditEvent } from "@/lib/audit";
 import { validateSampleInput } from "@/lib/rag-samples";
 
@@ -16,8 +16,8 @@ export async function PUT(
   }
 
   const { id } = await context.params;
-  if (!id) {
-    return NextResponse.json({ error: "Sample ID is required." }, { status: 400 });
+  if (!id || !isRagDocumentId(id)) {
+    return NextResponse.json({ error: "A valid sample ID is required." }, { status: 400 });
   }
 
   const body = await request.json().catch(() => null);
@@ -35,34 +35,18 @@ export async function PUT(
       body: JSON.stringify(validation.clean),
     });
 
-    if (upstream.status !== 404) {
-      if (upstream.ok) {
-        await writeAuditEvent({
-          actorId,
-          action: "RAG_SAMPLE_UPDATED",
-          entityType: "rag_sample",
-          metadata: { sampleId: id, question: validation.clean.question, category: validation.clean.category },
-        }).catch(() => {});
-      }
-      return forwardRagResponse(upstream);
+    if (upstream.ok) {
+      await writeAuditEvent({
+        actorId,
+        action: "RAG_SAMPLE_UPDATED",
+        entityType: "rag_sample",
+        metadata: { sampleId: id, question: validation.clean.question, category: validation.clean.category },
+      }).catch(() => {});
     }
-  } catch {
-    // Fallback response
+    return await forwardRagResponse(upstream);
+  } catch (error) {
+    return ragFailureResponse(error);
   }
-
-  await writeAuditEvent({
-    actorId,
-    action: "RAG_SAMPLE_UPDATED",
-    entityType: "rag_sample",
-    metadata: { sampleId: id, question: validation.clean.question, category: validation.clean.category },
-  }).catch(() => {});
-
-  return NextResponse.json({
-    id,
-    collection_id: RAG_COLLECTION_ID,
-    ...validation.clean,
-    updated_at: new Date().toISOString(),
-  });
 }
 
 export async function DELETE(
@@ -75,8 +59,8 @@ export async function DELETE(
   }
 
   const { id } = await context.params;
-  if (!id) {
-    return NextResponse.json({ error: "Sample ID is required." }, { status: 400 });
+  if (!id || !isRagDocumentId(id)) {
+    return NextResponse.json({ error: "A valid sample ID is required." }, { status: 400 });
   }
 
   const actorId = Number(session.user.id) || null;
@@ -86,27 +70,16 @@ export async function DELETE(
       method: "DELETE",
     });
 
-    if (upstream.status !== 404) {
-      if (upstream.ok) {
-        await writeAuditEvent({
-          actorId,
-          action: "RAG_SAMPLE_DELETED",
-          entityType: "rag_sample",
-          metadata: { sampleId: id },
-        }).catch(() => {});
-      }
-      return forwardRagResponse(upstream);
+    if (upstream.ok) {
+      await writeAuditEvent({
+        actorId,
+        action: "RAG_SAMPLE_DELETED",
+        entityType: "rag_sample",
+        metadata: { sampleId: id },
+      }).catch(() => {});
     }
-  } catch {
-    // Fallback response
+    return await forwardRagResponse(upstream);
+  } catch (error) {
+    return ragFailureResponse(error);
   }
-
-  await writeAuditEvent({
-    actorId,
-    action: "RAG_SAMPLE_DELETED",
-    entityType: "rag_sample",
-    metadata: { sampleId: id },
-  }).catch(() => {});
-
-  return NextResponse.json({ ok: true, message: `Sample ${id} deleted.` });
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { RAG_TOOL_ROLES, requireRagSession } from "@/lib/rag-auth";
-import { callRagApi, forwardRagResponse, RAG_COLLECTION_ID } from "@/lib/rag-api";
+import { callRagApi, forwardRagResponse, ragFailureResponse, RAG_COLLECTION_ID } from "@/lib/rag-api";
 import { writeAuditEvent } from "@/lib/audit";
 import { parseSamplesCsv, SampleInput, validateSampleInput } from "@/lib/rag-samples";
 
@@ -51,31 +51,16 @@ export async function POST(request: Request) {
       }),
     });
 
-    if (upstream.status !== 404) {
-      if (upstream.ok) {
-        await writeAuditEvent({
-          actorId,
-          action: "RAG_SAMPLES_IMPORTED",
-          entityType: "rag_sample",
-          metadata: { count: samplesToImport.length },
-        }).catch(() => {});
-      }
-      return forwardRagResponse(upstream);
+    if (upstream.ok) {
+      await writeAuditEvent({
+        actorId,
+        action: "RAG_SAMPLES_IMPORTED",
+        entityType: "rag_sample",
+        metadata: { count: samplesToImport.length },
+      }).catch(() => {});
     }
-  } catch {
-    // Fallback response
+    return await forwardRagResponse(upstream);
+  } catch (error) {
+    return ragFailureResponse(error);
   }
-
-  await writeAuditEvent({
-    actorId,
-    action: "RAG_SAMPLES_IMPORTED",
-    entityType: "rag_sample",
-    metadata: { count: samplesToImport.length },
-  }).catch(() => {});
-
-  return NextResponse.json({
-    ok: true,
-    imported_count: samplesToImport.length,
-    message: `Successfully imported ${samplesToImport.length} evaluation samples.`,
-  });
 }
