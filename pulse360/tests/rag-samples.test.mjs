@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import {
   DEFAULT_GOLDEN_SAMPLES,
   parseSamplesCsv,
@@ -57,5 +59,39 @@ test("DEFAULT_GOLDEN_SAMPLES contains standard core platform questions", () => {
     assert.ok(s.question.length > 5);
     assert.ok(s.approved_answer.length > 10);
     assert.ok(s.category.length > 0);
+  }
+});
+
+test("customer FAQ gold dataset CSV and JSON files parse cleanly with zero errors", () => {
+  const csvPath = fileURLToPath(new URL("../../docs/samples/pulse360_customer_faq_gold_dataset.csv", import.meta.url));
+  const csvContent = readFileSync(csvPath, "utf8");
+  const { samples: csvSamples, errors: csvErrors } = parseSamplesCsv(csvContent);
+  assert.equal(csvErrors.length, 0, `CSV parse errors: ${csvErrors.join(", ")}`);
+  assert.ok(csvSamples.length >= 10);
+
+  const jsonPath = fileURLToPath(new URL("../../docs/samples/pulse360_customer_faq_gold_dataset.json", import.meta.url));
+  const jsonContent = JSON.parse(readFileSync(jsonPath, "utf8"));
+  assert.ok(Array.isArray(jsonContent));
+  assert.equal(jsonContent.length, csvSamples.length);
+  for (const item of jsonContent) {
+    const val = validateSampleInput(item);
+    assert.equal(val.valid, true);
+  }
+});
+
+test("employee review FAQ gold dataset CSV and JSON files parse cleanly with zero errors", () => {
+  const csvPath = fileURLToPath(new URL("../../docs/samples/pulse360_employee_review_gold_dataset.csv", import.meta.url));
+  const csvContent = readFileSync(csvPath, "utf8");
+  const { samples: csvSamples, errors: csvErrors } = parseSamplesCsv(csvContent);
+  assert.equal(csvErrors.length, 0, `CSV parse errors: ${csvErrors.join(", ")}`);
+  assert.ok(csvSamples.length >= 10);
+
+  const jsonPath = fileURLToPath(new URL("../../docs/samples/pulse360_employee_review_gold_dataset.json", import.meta.url));
+  const jsonContent = JSON.parse(readFileSync(jsonPath, "utf8"));
+  assert.ok(Array.isArray(jsonContent));
+  assert.equal(jsonContent.length, csvSamples.length);
+  for (const item of jsonContent) {
+    const val = validateSampleInput(item);
+    assert.equal(val.valid, true);
   }
 });

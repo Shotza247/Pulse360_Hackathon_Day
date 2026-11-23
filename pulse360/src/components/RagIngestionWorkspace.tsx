@@ -64,6 +64,7 @@ export default function RagIngestionWorkspace({ canManageDocuments = false }: { 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteMessage, setDeleteMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [viewingAllPreviewChunks, setViewingAllPreviewChunks] = useState(false);
 
   const loadDocuments = useCallback(async () => {
     const response = await fetch("/api/system-admin/rag/documents", { cache: "no-store" });
@@ -259,7 +260,7 @@ export default function RagIngestionWorkspace({ canManageDocuments = false }: { 
 
             <section className="rounded-xl border border-gray-200 bg-white p-6">
               <div className="mb-4"><h2 className="text-base font-bold text-gray-950">Preview gate</h2><p className="mt-1 text-sm text-gray-500">Embedding never starts silently.</p></div>
-              {!preview ? <div className="rounded-lg bg-gray-50 p-5 text-sm text-gray-500">Choose a document and run a preview to inspect extracted chunks, model dimensions, and duplicate status.</div> : <div className="space-y-4"><div className="grid grid-cols-2 gap-3"><div className="rounded-lg bg-gray-50 p-3"><p className="text-xs text-gray-500">Chunks</p><p className="mt-1 text-2xl font-black text-gray-950">{preview.chunk_count}</p></div><div className="rounded-lg bg-gray-50 p-3"><p className="text-xs text-gray-500">Dimensions</p><p className="mt-1 text-2xl font-black text-gray-950">{preview.dimensions}</p></div></div><div className="rounded-lg border border-gray-200 p-3"><p className="truncate text-sm font-bold text-gray-900">{preview.filename}</p><p className="mt-1 text-xs text-gray-500">{preview.already_stored ? "Already committed; re-embedding will be skipped." : `Preview expires in ${Math.round(preview.expires_in_seconds / 60)} minutes.`}</p></div><div className="max-h-52 space-y-2 overflow-y-auto">{preview.chunks.slice(0, 4).map((chunk, index) => <div key={chunk.chunk_id} className="rounded-lg border border-gray-100 bg-gray-50 p-3"><p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Chunk {index + 1}{chunk.metadata?.page ? ` · Page ${chunk.metadata.page}` : ""}</p><p className="mt-1 line-clamp-3 text-xs leading-5 text-gray-700">{chunk.text}</p></div>)}</div><p className="text-xs leading-5 text-gray-500">Approve only after confirming the source is current and appropriate for the public FAQ collection.</p></div>}
+              {!preview ? <div className="rounded-lg bg-gray-50 p-5 text-sm text-gray-500">Choose a document and run a preview to inspect extracted chunks, model dimensions, and duplicate status.</div> : <div className="space-y-4"><div className="grid grid-cols-2 gap-3"><div className="rounded-lg bg-gray-50 p-3"><p className="text-xs text-gray-500">Chunks</p><p className="mt-1 text-2xl font-black text-gray-950">{preview.chunk_count}</p></div><div className="rounded-lg bg-gray-50 p-3"><p className="text-xs text-gray-500">Dimensions</p><p className="mt-1 text-2xl font-black text-gray-950">{preview.dimensions}</p></div></div><div className="rounded-lg border border-gray-200 p-3"><p className="truncate text-sm font-bold text-gray-900">{preview.filename}</p><p className="mt-1 text-xs text-gray-500">{preview.already_stored ? "Already committed; re-embedding will be skipped." : `Preview expires in ${Math.round(preview.expires_in_seconds / 60)} minutes.`}</p></div><div className="max-h-52 space-y-2 overflow-y-auto">{preview.chunks.slice(0, 4).map((chunk, index) => <div key={chunk.chunk_id} className="rounded-lg border border-gray-100 bg-gray-50 p-3"><p className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Chunk {index + 1}{chunk.metadata?.page ? ` · Page ${chunk.metadata.page}` : ""}</p><p className="mt-1 line-clamp-3 text-xs leading-5 text-gray-700">{chunk.text}</p></div>)}</div>{preview.chunks.length > 4 && <button type="button" onClick={() => setViewingAllPreviewChunks(true)} className="text-xs font-bold text-blue-600 hover:text-blue-800 underline">🔍 View all {preview.chunks.length} extracted chunks</button>}<p className="text-xs leading-5 text-gray-500">Approve only after confirming the source is current and appropriate for the public FAQ collection.</p></div>}
             </section>
           </div>}
 
@@ -269,6 +270,57 @@ export default function RagIngestionWorkspace({ canManageDocuments = false }: { 
               {canManageDocuments && confirmingId === document.id && <div className="mt-3 flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-red-900">Delete <span className="font-bold">{document.filename}</span> and its {document.chunks} chunks? The FAQ Assistant will stop answering from it. This cannot be undone.</p><div className="flex gap-2"><button type="button" disabled={deletingId !== null} onClick={() => setConfirmingId(null)} className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-40">Cancel</button><button type="button" disabled={deletingId !== null} onClick={() => void deleteDocument(document)} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-red-700 disabled:opacity-40">{deletingId === document.id ? "Deleting…" : "Delete document"}</button></div></div>}
             </div>)}</div>}</section>
         </>
+      )}
+
+      {/* Extracted Chunks Modal */}
+      {viewingAllPreviewChunks && preview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-xl space-y-4">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Extracted PDF/Document Chunks Preview</h3>
+                <p className="text-xs text-gray-500">{preview.filename} · {preview.chunk_count} total chunks extracted for embedding</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingAllPreviewChunks(false)}
+                className="text-gray-400 hover:text-gray-700 font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="max-h-[500px] overflow-y-auto space-y-3 pr-2">
+              {preview.chunks.map((chunk, index) => (
+                <div key={chunk.chunk_id} className="p-3.5 rounded-xl border border-gray-200 bg-slate-50 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs font-bold text-gray-700">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 text-[10px] flex items-center justify-center">
+                        {index + 1}
+                      </span>
+                      Chunk ID: {chunk.chunk_id}
+                    </span>
+                    {chunk.metadata?.page && <span className="bg-gray-200 px-2 py-0.5 rounded text-gray-700">Page {chunk.metadata.page}</span>}
+                  </div>
+                  <p className="text-xs font-mono text-gray-800 bg-white p-2.5 rounded-lg border border-gray-200 whitespace-pre-wrap leading-relaxed">
+                    {chunk.text}
+                  </p>
+                  <p className="text-[11px] text-gray-400 text-right">{chunk.text.length} characters</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setViewingAllPreviewChunks(false)}
+                className="px-4 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

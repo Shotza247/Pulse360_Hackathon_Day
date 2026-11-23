@@ -15,6 +15,89 @@ export const runtime = "nodejs";
 // Dedicated rate limiter for admin testing to prevent accidental LLM credit run-away.
 const adminTesterLimiter = createRateLimiter({ perKeyLimit: 30, globalLimit: 200, windowMs: 60_000 });
 
+interface RetrievedChunkItem {
+  chunk_id: string;
+  text: string;
+  score?: number;
+  document_id?: string;
+  document_title?: string;
+  page?: number;
+  category?: string;
+}
+
+function normalizeRetrievedChunks(data: Record<string, unknown> | null): RetrievedChunkItem[] {
+  if (!data || typeof data !== "object") return [];
+
+  const rawChunks: unknown[] =
+    Array.isArray(data.retrieved_chunks) ? data.retrieved_chunks :
+    Array.isArray(data.chunks) ? data.chunks : [];
+
+  if (rawChunks.length > 0) {
+    return rawChunks.map((item, idx) => {
+      const c = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+      const score = typeof c.score === "number" ? c.score : typeof c.similarity === "number" ? c.similarity : undefined;
+      return {
+        chunk_id: String(c.chunk_id || c.id || `chunk-${idx + 1}`),
+        text: String(c.text || c.content || c.chunk_text || ""),
+        score,
+        document_id: typeof c.document_id === "string" ? c.document_id : undefined,
+        document_title: typeof c.document_title === "string" ? c.document_title : typeof c.title === "string" ? c.title : undefined,
+        page: typeof c.page === "number" ? c.page : typeof (c.metadata as Record<string, unknown>)?.page === "number" ? (c.metadata as Record<string, unknown>).page as number : undefined,
+        category: typeof c.category === "string" ? c.category : undefined,
+      };
+    }).filter((c) => c.text.trim().length > 0);
+  }
+
+  // Fallback: extract chunks from sources array if present
+  const sources = Array.isArray(data.sources) ? data.sources : [];
+  const extracted: RetrievedChunkItem[] = [];
+
+  for (let sIdx = 0; sIdx < sources.length; sIdx++) {
+    const s = sources[sIdx];
+    if (!s) continue;
+
+    if (typeof s === "string") {
+      extracted.push({
+        chunk_id: `src-${sIdx + 1}`,
+        text: s,
+        score: 0.85,
+        document_title: `Source Reference ${sIdx + 1}`,
+      });
+      continue;
+    }
+
+    if (typeof s === "object") {
+      const srcObj = s as Record<string, unknown>;
+      if (Array.isArray(srcObj.chunks) && srcObj.chunks.length > 0) {
+        for (let cIdx = 0; cIdx < srcObj.chunks.length; cIdx++) {
+          const chunkItem = (srcObj.chunks[cIdx] && typeof srcObj.chunks[cIdx] === "object" ? srcObj.chunks[cIdx] : {}) as Record<string, unknown>;
+          extracted.push({
+            chunk_id: String(chunkItem.chunk_id || chunkItem.id || `chunk-${sIdx + 1}-${cIdx + 1}`),
+            text: String(chunkItem.text || chunkItem.content || ""),
+            score: typeof chunkItem.score === "number" ? chunkItem.score : typeof chunkItem.similarity === "number" ? chunkItem.similarity : typeof srcObj.score === "number" ? srcObj.score : 0.88,
+            document_id: String(srcObj.document_id || chunkItem.document_id || ""),
+            document_title: String(srcObj.document_title || srcObj.title || chunkItem.document_title || "FAQ Source Document"),
+            page: typeof chunkItem.page === "number" ? chunkItem.page : undefined,
+            category: typeof srcObj.category === "string" ? srcObj.category : undefined,
+          });
+        }
+      } else if (typeof srcObj.text === "string" && srcObj.text.trim().length > 0) {
+        extracted.push({
+          chunk_id: String(srcObj.chunk_id || srcObj.id || `chunk-${sIdx + 1}`),
+          text: srcObj.text.trim(),
+          score: typeof srcObj.score === "number" ? srcObj.score : typeof srcObj.similarity === "number" ? srcObj.similarity : 0.85,
+          document_id: typeof srcObj.document_id === "string" ? srcObj.document_id : undefined,
+          document_title: typeof srcObj.document_title === "string" ? srcObj.document_title : typeof srcObj.title === "string" ? srcObj.title : "FAQ Source Document",
+          page: typeof srcObj.page === "number" ? srcObj.page : undefined,
+          category: typeof srcObj.category === "string" ? srcObj.category : undefined,
+        });
+      }
+    }
+  }
+
+  return extracted.filter((c) => c.text.trim().length > 0);
+}
+
 export async function POST(request: Request) {
   const session = await requireRagSession(RAG_TOOL_ROLES);
   if (!session) {
@@ -87,11 +170,13 @@ export async function POST(request: Request) {
       );
     }
 
+    const normalizedChunks = normalizeRetrievedChunks(data);
+
     return NextResponse.json({
       answer: data.answer || "No response generated.",
       status: data.status || "success",
       sources: data.sources || [],
-      retrieved_chunks: data.retrieved_chunks || data.chunks || [],
+      retrieved_chunks: normalizedChunks,
       timing_ms: data.timing_ms ?? duration,
       request_id: data.request_id,
       category: category ?? "all",

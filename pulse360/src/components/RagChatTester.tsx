@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { RAG_CATEGORIES } from "@/lib/rag-api";
+import { EvaluationSample } from "@/lib/rag-samples";
 
 interface RetrievedChunk {
   chunk_id: string;
@@ -25,15 +26,8 @@ interface ChatMessage {
   requestId?: string;
   category?: string;
   error?: boolean;
+  benchmarkGoldSample?: EvaluationSample | null;
 }
-
-const SAMPLE_QUESTIONS = [
-  "What are the 8 phases in a 360 review cycle?",
-  "How is the annual billing discount calculated?",
-  "What is the file upload limit for FAQ documents?",
-  "Who has permission to delete FAQ documents?",
-  "How are confidential peer ratings anonymized?",
-];
 
 function formatTime(ms?: number) {
   if (ms === undefined || ms === null) return "";
@@ -56,7 +50,30 @@ export default function RagChatTester() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [loading, setLoading] = useState(false);
   const [activeInspectorId, setActiveInspectorId] = useState<string | null>(null);
+  const [inspectingChunk, setInspectingChunk] = useState<RetrievedChunk | null>(null);
+
+  // Gold dataset benchmark state
+  const [goldSamples, setGoldSamples] = useState<EvaluationSample[]>([]);
+  const [selectedGoldSample, setSelectedGoldSample] = useState<EvaluationSample | null>(null);
+  const [showGoldSelector, setShowGoldSelector] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const loadGoldSamples = useCallback(async () => {
+    try {
+      const res = await fetch("/api/system-admin/rag/samples", { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        setGoldSamples(Array.isArray(data) ? data : []);
+      }
+    } catch {
+      // Ignore network errors
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadGoldSamples();
+  }, [loadGoldSamples]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -66,9 +83,11 @@ export default function RagChatTester() {
     scrollToBottom();
   }, [messages, loading]);
 
-  async function handleSubmit(questionText?: string) {
+  async function handleSubmit(questionText?: string, goldSampleToBenchmark?: EvaluationSample | null) {
     const question = (questionText ?? input).trim();
     if (!question || loading) return;
+
+    const goldSample = goldSampleToBenchmark ?? selectedGoldSample;
 
     const userMessageId = `user-${Date.now()}`;
     const userMsg: ChatMessage = {
@@ -77,6 +96,7 @@ export default function RagChatTester() {
       text: question,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       category: selectedCategory !== "all" ? selectedCategory : undefined,
+      benchmarkGoldSample: goldSample,
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -106,6 +126,7 @@ export default function RagChatTester() {
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             timing_ms: data.timing_ms,
             error: true,
+            benchmarkGoldSample: goldSample,
           },
         ]);
         return;
@@ -122,6 +143,7 @@ export default function RagChatTester() {
         retrieved_chunks: Array.isArray(data.retrieved_chunks) ? data.retrieved_chunks : [],
         requestId: data.request_id,
         category: data.category,
+        benchmarkGoldSample: goldSample,
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
@@ -138,6 +160,7 @@ export default function RagChatTester() {
           text: err instanceof Error ? err.message : "An unexpected network error occurred.",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           error: true,
+          benchmarkGoldSample: goldSample,
         },
       ]);
     } finally {
@@ -145,12 +168,18 @@ export default function RagChatTester() {
     }
   }
 
+  function handleSelectGoldSample(sample: EvaluationSample) {
+    setSelectedGoldSample(sample);
+    setShowGoldSelector(false);
+    void handleSubmit(sample.question, sample);
+  }
+
   const selectedMsg = messages.find((m) => m.id === activeInspectorId);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       {/* Main Chat Panel */}
-      <div className="lg:col-span-7 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[700px]">
+      <div className="lg:col-span-7 bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col h-[750px]">
         {/* Header & Category Filter */}
         <div className="p-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50 rounded-t-2xl">
           <div>
@@ -158,12 +187,19 @@ export default function RagChatTester() {
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
               FAQ Assistant Sandbox
             </h3>
-            <p className="text-xs text-gray-500">Test queries and inspect raw retrieval context</p>
+            <p className="text-xs text-gray-500">Test queries, benchmark gold answers & inspect retrieved vectors</p>
           </div>
-          <div className="flex items-center gap-2">
-            <label htmlFor="category-select" className="text-xs text-gray-500 font-medium">Filter:</label>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setShowGoldSelector(!showGoldSelector)}
+              className="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5"
+            >
+              ⭐ Test with Gold Sample
+            </button>
             <select
               id="category-select"
+              aria-label="FAQ Category Filter"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -178,7 +214,7 @@ export default function RagChatTester() {
             {messages.length > 0 && (
               <button
                 type="button"
-                onClick={() => { setMessages([]); setActiveInspectorId(null); }}
+                onClick={() => { setMessages([]); setActiveInspectorId(null); setSelectedGoldSample(null); }}
                 className="text-xs text-gray-500 hover:text-red-600 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
                 title="Clear conversation"
               >
@@ -187,6 +223,40 @@ export default function RagChatTester() {
             )}
           </div>
         </div>
+
+        {/* Gold Sample Quick Selector Drawer */}
+        {showGoldSelector && (
+          <div className="p-4 bg-amber-50/70 border-b border-amber-200 text-xs space-y-2">
+            <div className="flex items-center justify-between font-bold text-amber-900">
+              <span>Select an Approved Company-Standard Answer to Benchmark:</span>
+              <button
+                type="button"
+                onClick={() => setShowGoldSelector(false)}
+                className="text-amber-700 hover:text-amber-950 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
+              {goldSamples.map((sample) => (
+                <button
+                  key={sample.id}
+                  type="button"
+                  onClick={() => handleSelectGoldSample(sample)}
+                  className="p-2.5 text-left bg-white hover:bg-amber-100/60 border border-amber-200 rounded-xl transition flex flex-col gap-1"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-gray-900">{sample.question}</span>
+                    <span className="text-[10px] uppercase font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
+                      {sample.category}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-600 line-clamp-1 italic">{sample.approved_answer}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Message Stream */}
         <div className="flex-1 p-4 overflow-y-auto space-y-4">
@@ -197,17 +267,17 @@ export default function RagChatTester() {
               </div>
               <h4 className="text-sm font-semibold text-gray-800">Ask the FAQ Assistant</h4>
               <p className="text-xs text-gray-500 max-w-sm mt-1">
-                Test company questions and observe which chunks are retrieved from Supabase pgvector.
+                Test company questions and observe which chunks are retrieved from Supabase pgvector with their vector scores.
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-2 max-w-md">
-                {SAMPLE_QUESTIONS.map((q) => (
+                {goldSamples.slice(0, 4).map((s) => (
                   <button
-                    key={q}
+                    key={s.id}
                     type="button"
-                    onClick={() => handleSubmit(q)}
+                    onClick={() => handleSelectGoldSample(s)}
                     className="text-xs bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-blue-700 border border-gray-200 hover:border-blue-200 rounded-full px-3 py-1.5 transition text-left"
                   >
-                    {q}
+                    ⭐ {s.question}
                   </button>
                 ))}
               </div>
@@ -219,7 +289,7 @@ export default function RagChatTester() {
                 className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed ${
+                  className={`max-w-[88%] rounded-2xl p-4 text-sm leading-relaxed ${
                     msg.sender === "user"
                       ? "bg-blue-600 text-white rounded-br-xs"
                       : msg.error
@@ -228,6 +298,19 @@ export default function RagChatTester() {
                   }`}
                 >
                   <div className="whitespace-pre-wrap">{msg.text}</div>
+
+                  {/* Ground Truth Benchmark Card for Assistant Messages */}
+                  {msg.sender === "assistant" && msg.benchmarkGoldSample && (
+                    <div className="mt-3 p-3 bg-amber-50/80 border border-amber-200/90 rounded-xl text-xs space-y-1.5 text-gray-900">
+                      <div className="flex items-center justify-between text-amber-900 font-bold">
+                        <span>⭐ Ground Truth (Approved Standard):</span>
+                        <span className="text-[10px] bg-amber-200/70 text-amber-900 px-2 py-0.5 rounded-full uppercase">
+                          {msg.benchmarkGoldSample.category}
+                        </span>
+                      </div>
+                      <p className="text-gray-800 font-sans leading-relaxed">{msg.benchmarkGoldSample.approved_answer}</p>
+                    </div>
+                  )}
 
                   {/* Sources Pill List */}
                   {msg.sources && msg.sources.length > 0 && (
@@ -253,10 +336,10 @@ export default function RagChatTester() {
                           type="button"
                           onClick={() => setActiveInspectorId(msg.id)}
                           className={`font-semibold underline transition ${
-                            activeInspectorId === msg.id ? "text-blue-600" : "hover:text-blue-600"
+                            activeInspectorId === msg.id ? "text-blue-600 font-bold" : "hover:text-blue-600"
                           }`}
                         >
-                          {activeInspectorId === msg.id ? "Viewing Chunks" : "Inspect Chunks"}
+                          {activeInspectorId === msg.id ? "Viewing Chunks & Scores" : "Inspect Chunks & Scores"}
                         </button>
                       )}
                     </div>
@@ -283,7 +366,7 @@ export default function RagChatTester() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type a policy or FAQ question (e.g., 'How do peer nominations work?')..."
+            placeholder="Type a policy or FAQ question (e.g., 'What are the 8 phases in a review cycle?')..."
             disabled={loading}
             className="flex-1 text-sm border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
           />
@@ -298,13 +381,13 @@ export default function RagChatTester() {
       </div>
 
       {/* Retrieval Inspector Drawer */}
-      <div className="lg:col-span-5 bg-white rounded-2xl border border-gray-200 shadow-sm p-5 h-[700px] flex flex-col overflow-hidden">
+      <div className="lg:col-span-5 bg-white rounded-2xl border border-gray-200 shadow-sm p-5 h-[750px] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between pb-3 border-b border-gray-100">
           <div>
             <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
               🔍 Chunk & Retrieval Inspector
             </h3>
-            <p className="text-xs text-gray-500">Examine vector matches & similarity ranks</p>
+            <p className="text-xs text-gray-500">Vector similarity scores & extracted document context</p>
           </div>
           {selectedMsg && (
             <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
@@ -317,13 +400,13 @@ export default function RagChatTester() {
           {!selectedMsg ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400">
               <p className="text-xs">
-                Select <span className="font-medium text-gray-600">&ldquo;Inspect Chunks&rdquo;</span> on any assistant response to view retrieved context chunks and score diagnostics.
+                Select <span className="font-medium text-gray-600">&ldquo;Inspect Chunks &amp; Scores&rdquo;</span> on any assistant response to view retrieved vector context and similarity rankings.
               </p>
             </div>
           ) : selectedMsg.retrieved_chunks && selectedMsg.retrieved_chunks.length > 0 ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs text-gray-500 font-medium">
-                <span>Retrieved Chunks ({selectedMsg.retrieved_chunks.length})</span>
+                <span>Retrieved Context ({selectedMsg.retrieved_chunks.length} chunks)</span>
                 {selectedMsg.category && (
                   <span className="capitalize bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[11px]">
                     Category: {selectedMsg.category}
@@ -333,52 +416,120 @@ export default function RagChatTester() {
 
               {selectedMsg.retrieved_chunks.map((chunk, idx) => {
                 const scorePercent = chunk.score !== undefined ? Math.round(chunk.score * 100) : null;
+                const formattedScore = chunk.score !== undefined ? chunk.score.toFixed(4) : null;
+
                 return (
                   <div
                     key={chunk.chunk_id || idx}
                     className="p-3.5 rounded-xl border border-gray-200/90 bg-slate-50/50 hover:bg-slate-50 transition space-y-2"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-                        <span className="w-4 h-4 rounded-full bg-blue-100 text-blue-800 text-[10px] flex items-center justify-center font-bold">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5 truncate">
+                        <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 text-[11px] flex items-center justify-center font-bold">
                           {idx + 1}
                         </span>
                         {chunk.document_title || chunk.document_id || "Source Document"}
                       </span>
                       {scorePercent !== null && (
-                        <span
-                          className={`text-xs font-semibold px-2 py-0.5 rounded ${
-                            scorePercent >= 75
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : scorePercent >= 50
-                              ? "bg-amber-50 text-amber-700 border border-amber-200"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          Score: {scorePercent}%
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`text-xs font-bold px-2 py-0.5 rounded ${
+                              scorePercent >= 80
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : scorePercent >= 60
+                                ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            Vector: {scorePercent}% ({formattedScore})
+                          </span>
+                        </div>
                       )}
                     </div>
 
-                    <p className="text-xs text-gray-700 font-mono bg-white p-2.5 rounded-lg border border-gray-200/70 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
+                    <p className="text-xs text-gray-700 font-mono bg-white p-2.5 rounded-lg border border-gray-200/70 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto">
                       {chunk.text}
                     </p>
 
-                    <div className="flex items-center justify-between text-[11px] text-gray-400 font-mono">
-                      <span>Chunk ID: {chunk.chunk_id ? chunk.chunk_id.slice(0, 8) + "…" : "n/a"}</span>
-                      {chunk.page !== undefined && chunk.page !== null && <span>Page {chunk.page}</span>}
+                    <div className="flex items-center justify-between text-[11px] text-gray-400 font-mono pt-1">
+                      <div className="flex items-center gap-2">
+                        <span>Chunk: {chunk.chunk_id ? chunk.chunk_id.slice(0, 10) + "…" : "n/a"}</span>
+                        {chunk.page !== undefined && chunk.page !== null && (
+                          <span className="bg-gray-100 px-1.5 py-0.2 rounded text-gray-600">Page {chunk.page}</span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setInspectingChunk(chunk)}
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Preview Full Chunk
+                      </button>
                     </div>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-              <strong>No discrete chunks returned.</strong> The RAG response may have used general knowledge or the dedicated chunk extractor endpoint is in fallback mode.
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-2">
+              <p>
+                <strong>No discrete chunks returned.</strong> The RAG response may have used general knowledge or the dedicated chunk extractor endpoint is in fallback mode.
+              </p>
+              <p className="text-[11px] text-amber-700">
+                Tip: Ingest documents in the <strong>FAQ Documents</strong> tab to index vector chunks with embeddings.
+              </p>
             </div>
           )}
         </div>
       </div>
+
+      {/* Full Chunk Text Preview Modal */}
+      {inspectingChunk && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl space-y-4">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">
+                  📄 Extracted Document Chunk Inspector
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Source: {inspectingChunk.document_title || inspectingChunk.document_id || "Document"}
+                  {inspectingChunk.page ? ` · Page ${inspectingChunk.page}` : ""}
+                </p>
+              </div>
+              {inspectingChunk.score !== undefined && (
+                <span className="text-xs font-bold px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  Vector Match: {Math.round(inspectingChunk.score * 100)}% ({inspectingChunk.score.toFixed(4)})
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                Extracted Machine-Readable Text:
+              </span>
+              <div className="p-4 bg-slate-50 border border-gray-200 rounded-xl text-xs font-mono leading-relaxed text-gray-800 max-h-96 overflow-y-auto whitespace-pre-wrap">
+                {inspectingChunk.text}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-gray-400 font-mono border-t border-gray-100 pt-3">
+              <span>Chunk ID: {inspectingChunk.chunk_id}</span>
+              <span>Length: {inspectingChunk.text.length} chars</span>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setInspectingChunk(null)}
+                className="px-4 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
